@@ -4,9 +4,10 @@
 #include "boardstate.h"
 
 struct Action {
-  int player;
-  int i;
-  int j;
+  int i1;
+  int j1;
+  int i2;
+  int j2;
 };
 
 #endif
