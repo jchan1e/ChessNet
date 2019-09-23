@@ -30,7 +30,7 @@ int main() {
 
   //should retun list of legal moves
   vector<Action> movelist;
-  int num_moves = E->getLegalMoves(&movelist);
+  unsigned int num_moves = E->getLegalMoves(&movelist, S);
     //TODO: check that the moves are valid)
   if (movelist.size() == num_moves && num_moves == 20)
     cout << "+ returned valid movelist\n";
