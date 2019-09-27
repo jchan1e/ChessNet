@@ -23,20 +23,26 @@ class Engine {
       }
     }
 
-    void check_kings(BoardState* BS) {
-      int winner = 0;
+    float check_kings(BoardState BS) {
+      int w = 0;
       for (int i=0; i < 8; ++i) {
         for (int j=0; j < 8; ++j) {
-          if (BS->board[i][j] == w_king)
-            winner++;
-          else if (BS->board[i][j] == b_king)
-            winner--;
+          if (BS.board[i][j] == w_king)
+            w++;
+          else if (BS.board[i][j] == b_king)
+            w--;
         }
       }
-      BS->winner = winner;
+      if (w)
+        return 0.5 + 0.5*w;
+      else
+        return -1.0;
     }
 
-    bool check_stalemate(BoardState* BS) {
+    bool check_stalemate(BoardState BS) {
+      if (BS.turn > 400)
+        return true;
+
       int Pcount = 0;
       int Rcount = 0;
       int Bwcount = 0;
@@ -48,7 +54,7 @@ class Engine {
 
       for (int i=0; i < 8; ++i) {
         for (int j=0; j < 8; ++j) {
-          switch (BS->board[i][j]) {
+          switch (BS.board[i][j]) {
             case b_pawn:
             case w_pawn:
               Pcount++;
@@ -83,17 +89,17 @@ class Engine {
           }
         }
       }
-      if (Kb != Kw)
-        BS->winner = Kw - Kb;
+      if (Kb < 1 || Kw < 1)
+        return false;
       else if (Pcount == 0 && Rcount == 0 && Qcount == 0) {
         // Unwinnable game states
         if (Bbcount+Bwcount == 0 && Ncount == 0) // only 2 kings left
           return true;
-        else if (Bbcount+Bwcount == 1 && Ncount == 0) // 2 kings & a bishop
+        else if (Bbcount+Bwcount == 1 && Ncount == 0) // 2 kings + bishop
           return true;
-        else if (Bbcount+Bwcount == 0 && Ncount == 1) // 2 kings & a knight
+        else if (Bbcount+Bwcount == 0 && Ncount == 1) // 2 kings + knight
           return true;
-        else if (Bbcount+Bwcount == 2 && Ncount == 0 && Bbcount != Bwcount) // 2 bishops on the same color square
+        else if (Bbcount+Bwcount == 2 && Ncount == 0 && Bbcount != Bwcount) // 2 bishops on the same tiles
           return true;
       }
       return false;
@@ -102,7 +108,7 @@ class Engine {
   public:
     Engine() {
       state.turn = 1;
-      state.winner = 0;
+      state.winner = -1;
       for (int i=0; i < 8; ++i) {
         for (int j=0; j < 8; ++j) {
           state.board[i][j] = blank;
@@ -156,23 +162,23 @@ class Engine {
               int ii, jj;
               switch(BS.board[i][j]) {
                 case b_pawn:
-                  if (j-1 < 8 && BS.board[i][j-1] == blank) { // straight ahead
+                  if (j-1 >= 0 && BS.board[i][j-1] == blank) { // straight ahead
                     Action a = {i, j, i, j-1};
                     a_list->push_back(a);
                     moves++;
                   }
-                  if (j == 1 && BS.board[i][j-1] == blank && BS.board[i][j-2] == blank) { // double first move
+                  if (j == 6 && BS.board[i][j-1] == blank && BS.board[i][j-2] == blank) { // double first move
                     Action a = {i, j, i, j-2};
                     a_list->push_back(a);
                     moves++;
                   }
-                  if (j-1 < 8 && i-1 >= 0 && BS.board[i-1][j-1] > blank) { // blank = 0
+                  if (j-1 >= 0 && i-1 >= 0 && BS.board[i-1][j-1] > blank) { // blank = 0
                     Action a = {i, j, i-1, j-1};                           // white pieces > 0
                     a_list->push_back(a);
                     moves++;
                   }
-                  if (j-1 < 8 && i+1 < 8 && BS.board[i+1][j-1] > blank) {
-                    Action a = {i, j, i-1, j-1};
+                  if (j-1 >= 0 && i+1 < 8 && BS.board[i+1][j-1] > blank) {
+                    Action a = {i, j, i+1, j-1};
                     a_list->push_back(a);
                     moves++;
                   }
@@ -909,19 +915,43 @@ class Engine {
           }
         }
       }
-      
-      if (BS.winner) {
+
+      float winner = -1.0;
+
+      if (moves == 0) {
+        if (player_stalemate(BS))
+          winner = 0.5;
+      }
+
+      float w = check_kings(BS);
+      if (w != -1) {
+        winner = w;
+      }
+
+      if (winner != -1.0) {
         a_list->clear();
         moves = -1;
       }
       return moves;
     }
 
-    bool player_stalemate(BoardState* BS {
+    bool player_stalemate(BoardState BS) {
       // if active player has no moves and is not in check, stalemate
-      bool stalemate == true;
+      bool stalemate = true;
       int player = BS.turn*2 - 1;
-      int ki, kj;
+      int ki = 0;
+      int kj = 0;
+      // sanity check that both kings are present
+      int kings = 0;
+      for (int i=0; i < 8; ++i) {
+        for (int j=0; j < 8; ++j) {
+          if (BS.board[i][j] == player*w_king) {
+            kings++;
+          }
+        }
+      }
+      if (kings != 2)
+        return false;
       for (int i=0; i < 8; ++i) {
         for (int j=0; j < 8; ++j) {
           if (BS.board[i][j] == player*w_king) {
@@ -945,8 +975,8 @@ class Engine {
           stalemate = false;
       }
       // lower right
-      ii = i+1;
-      jj = j-1;
+      ii = ki+1;
+      jj = kj-1;
       while (ii < 8 && 0 <= jj &&
              BS.board[ii][jj] == blank) {
         ii++;
@@ -959,8 +989,8 @@ class Engine {
           stalemate = false;
       }
       // lower left
-      ii = i-1;
-      jj = j-1;
+      ii = ki-1;
+      jj = kj-1;
       while (0 <= ii && 0 <= jj &&
              BS.board[ii][jj] == blank) {
         ii--;
@@ -973,8 +1003,8 @@ class Engine {
           stalemate = false;
       }
       // upper left
-      ii = i-1;
-      jj = j+1;
+      ii = ki-1;
+      jj = kj+1;
       while (0 <= ii && jj < 8 &&
              BS.board[ii][jj] == blank) {
         ii--;
@@ -987,8 +1017,8 @@ class Engine {
           stalemate = false;
       }
       // up
-      ii = i;
-      jj = j+1;
+      ii = ki;
+      jj = kj+1;
       while (jj < 8 &&
              BS.board[ii][jj] == blank) {
         jj++;
@@ -1000,8 +1030,8 @@ class Engine {
           stalemate = false;
       }
       // right
-      ii = i+1;
-      jj = j;
+      ii = ki+1;
+      jj = kj;
       while (ii < 8 &&
              BS.board[ii][jj] == blank) {
         ii++;
@@ -1013,8 +1043,8 @@ class Engine {
           stalemate = false;
       }
       // down
-      ii = i;
-      jj = j-1;
+      ii = ki;
+      jj = kj-1;
       while (0 <= jj &&
              BS.board[ii][jj] == blank) {
         jj--;
@@ -1026,8 +1056,8 @@ class Engine {
           stalemate = false;
       }
       // left
-      ii = i-1;
-      jj = j;
+      ii = ki-1;
+      jj = kj;
       while (0 <= ii &&
              BS.board[ii][jj] == blank) {
         ii--;
@@ -1042,42 +1072,42 @@ class Engine {
       ii = ki+1; jj = kj+2;
       if (ii < 8 && jj < 8 &&
           BS.board[ii][jj] == player*b_knight) {
-        stalemate == false;
+        stalemate = false;
       }
       ii = ki+2; jj = kj+1;
       if (ii < 8 && jj < 8 &&
           BS.board[ii][jj] == player*b_knight) {
-        stalemate == false;
+        stalemate = false;
       }
       ii = ki+2; jj = kj-1;
       if (ii < 8 && jj >= 0 &&
           BS.board[ii][jj] == player*b_knight) {
-        stalemate == false;
+        stalemate = false;
       }
       ii = ki+1; jj = kj-2;
       if (ii < 8 && jj >= 0 &&
           BS.board[ii][jj] == player*b_knight) {
-        stalemate == false;
+        stalemate = false;
       }
       ii = ki-1; jj = kj-2;
       if (ii >= 0 && jj >= 0 &&
           BS.board[ii][jj] == player*b_knight) {
-        stalemate == false;
+        stalemate = false;
       }
       ii = ki-2; jj = kj-1;
       if (ii >= 0 && jj >= 0 &&
           BS.board[ii][jj] == player*b_knight) {
-        stalemate == false;
+        stalemate = false;
       }
       ii = ki-2; jj = kj+1;
       if (ii >= 0 && jj < 8 &&
           BS.board[ii][jj] == player*b_knight) {
-        stalemate == false;
+        stalemate = false;
       }
       ii = ki-1; jj = kj+2;
       if (ii >= 0 && jj < 8 &&
           BS.board[ii][jj] == player*b_knight) {
-        stalemate == false;
+        stalemate = false;
       }
 
       return stalemate;
@@ -1095,7 +1125,7 @@ class Engine {
       S.board[a.i2][a.j2] = S.board[a.i1][a.j1];
       S.board[a.i1][a.j1] = blank;
       check_pawns(&S);
-      if (check_stalemate(&S))
+      if (check_stalemate(S))
         S.winner = 0.5;
       S.turn++;
       return S;

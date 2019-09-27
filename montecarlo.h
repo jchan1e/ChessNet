@@ -24,6 +24,8 @@ class Node {
       parent = P;
       action = A;
       state = S;
+      if (P != NULL)
+        opponent = !parent->opponent;
     }
 
     ~Node() {
@@ -34,29 +36,31 @@ class Node {
 
     float UCB(float C) const {
       // Upper Confidence Bound
-      // C balances exploring new nodes vs exploiting good ones
+      // C balances exploring new nodes against exploiting known valuable ones
       return wins/visits + C*(sqrt(log(parent->visits)/visits));
     }
 
-    bool operator<(const Node& b) {
-      return UCB(sqrt(2)) < b.UCB(sqrt(2));
-    }
+    //bool operator<(const Node& b) {
+    //  return UCB(sqrt(2)) < b.UCB(sqrt(2));
+    //}
 
 };
 
 class MonteCarloTree {
-  private:
+  public:
     Node* root;
     Engine E;
     float Ce; // exploration bias parameter
   public:
-    MonteCarloTree(float c) {
+    MonteCarloTree(bool opp, float c) {
       Ce = c;
       Action A = {0,0,0,0};
       root = new Node(NULL, A, E.getBoardState());
+      root->opponent = opp;
     }
 
     void backpropagate(Node* N, float score) {
+      root->visits += 1;
       while (N->parent != NULL) {
         N->wins += score;
         N->visits += 1;
@@ -64,42 +68,43 @@ class MonteCarloTree {
       }
     }
 
-    void expand(Node* n) {
+    void expand(Node* N) {
       vector<Action> A_list;
-      if (E.getLegalMoves(&A_list) > 0) {
-        int moves = A_list.size();
+      int moves = E.getLegalMoves(&A_list, N->state);
+      if (moves > 0) {
         for (int i=0; i < moves; ++i){
-          Node* N = new Node(n, A_list[i], E.advance(n->state, A_list[i]));
-          n->children.push_back(N);
+          Node* n = new Node(N, A_list[i], E.advance(N->state, A_list[i]));
+          N->children.push_back(n);
         }
-      else {
-        n->endstate = true;
-        if (E.player_stalemate(&(n->state))) {
-          n->
+      }
+      else
+        N->endstate = true;
     }
 
     //void setRoot(BoardState BS) {
     //  root->state = BS;
     //}
 
-    int rollout(BoardState BS) {
+    float rollout(BoardState BS) {
       vector<Action> A_list;
-      while (-1 != E.getLegalMoves(&A_list, BS)) {
+      while (E.getLegalMoves(&A_list, BS) > 0 && BS.winner == -1) {
         int R = rand() % A_list.size();
         BS = E.advance(BS, A_list[R]);
       }
+      if (BS.winner == -1)
+        return 0.5;
       return BS.winner;
     }
 
-    Action run(bool* stop) {
+    void run(float* wins, int* confidence, Action* A, bool* stop) {
       while (*stop == false) { // wait for separate thread to end evaluation
+        //cout << "stop = false\n";
         Node* N = root;
+        //traverse the tree by highest UCB until leaf node
         while (!N->children.empty()) {
-          //traverse the tree by highest UCB til leaf node
           int best_i = 0;
           float best_UCB = N->children[0]->UCB(Ce);
-          for (int i=1; i < N->children.size(); ++i)
-          {
+          for (unsigned int i=1; i < N->children.size(); ++i) {
             if (N->children[i]->UCB(Ce) > best_UCB) {
               best_i = i;
               best_UCB = N->children[i]->UCB(Ce);
@@ -108,22 +113,34 @@ class MonteCarloTree {
           N = N->children[best_i];
         }
 
-        if (N->visits == 0) {
-          // run rollout and backpropagate
-          BoardState BS = N->state;
-          int w = rollout(BS);
+        //E.printBoard(N->state);
+
+        if (N->visits == 0 || N->endstate) {
+          // if node is unvisited or endstate, run rollout and backpropagate
+          float win = rollout(N->state);
+          backpropagate(N, win);
         }
         else {
-          // expand leaf node and pick a child node to rollout
+          // otherwise, expand leaf node and pick a child node to rollout
           expand(N);
-          int r = rand() % N->children.size();
-          Node* C = N->children[r];
-          //float win = rollout(C);
-          float win = 0.5;
-          backpropagate(C, win);
+          if (!N->children.empty()) {
+            int r = rand() % N->children.size();
+            N = N->children[r];
+          }
+          float win = rollout(N->state);
+          backpropagate(N, win);
         }
       }
-      return root->children[0]->action;
+      cout << "stop = true\n";
+      // return list of best actions
+      Node* node = root->children[0];
+      for (Node* N : root->children) {
+        if (N->UCB(Ce) > node->UCB(Ce))
+          node = N;
+      }
+      *A = node->action;
+      *wins = node->wins;
+      *confidence = node->visits;
     }
 
     void advance(Node* R) {
