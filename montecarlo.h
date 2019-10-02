@@ -84,17 +84,13 @@ class MonteCarloTree {
         N->endstate = true;
     }
 
-    //void setRoot(BoardState BS) {
-    //  root->state = BS;
-    //}
-
     float rollout(BoardState BS) {
       vector<Action> A_list;
-      while (E.getLegalMoves(&A_list, BS) > 0) {// && BS.winner == -1) {
+      while (E.getLegalMoves(&A_list, BS) > 0) { // && BS.winner == -1) {
         int R = rand() % A_list.size();
         BS = E.advance(BS, A_list[R]);
       }
-      if (BS.winner == -1)// || BS.winner == 0.5)
+      if (BS.winner == -1) // || BS.winner == 0.5)
         return 0.5;
       return BS.winner;
     }
@@ -140,7 +136,7 @@ class MonteCarloTree {
       if (!node->children.empty())
         node = root->children[0];
       for (Node* N : root->children) {
-        if (N->UCB(Ce) > node->UCB(Ce))
+        if (N->UCB(0) > node->UCB(0))
           node = N;
       }
       *A = node->action;
