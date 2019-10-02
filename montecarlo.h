@@ -36,8 +36,11 @@ class Node {
 
     float UCB(float C) const {
       // Upper Confidence Bound
-      // C balances exploring new nodes against exploiting known valuable ones
-      return wins/visits + C*(sqrt(log(parent->visits)/visits));
+      // Lower C favors exploitation, higher favors exploration
+      if (!opponent)
+        return wins/visits + C*(sqrt(log(parent->visits)/visits));
+      else
+        return 1.0 - wins/visits + C*(sqrt(log(parent->visits)/visits));
     }
 
     //bool operator<(const Node& b) {
@@ -54,7 +57,7 @@ class MonteCarloTree {
   public:
     MonteCarloTree(bool opp, float c) {
       Ce = c;
-      Action A = {0,0,0,0};
+      Action A = {0};
       root = new Node(NULL, A, E.getBoardState());
       root->opponent = opp;
     }
@@ -87,16 +90,16 @@ class MonteCarloTree {
 
     float rollout(BoardState BS) {
       vector<Action> A_list;
-      while (E.getLegalMoves(&A_list, BS) > 0 && BS.winner == -1) {
+      while (E.getLegalMoves(&A_list, BS) > 0) {// && BS.winner == -1) {
         int R = rand() % A_list.size();
         BS = E.advance(BS, A_list[R]);
       }
-      if (BS.winner == -1)
+      if (BS.winner == -1)// || BS.winner == 0.5)
         return 0.5;
       return BS.winner;
     }
 
-    void run(float* wins, int* confidence, Action* A, bool* stop) {
+    void run(float* wins, int* visits, Action* A, bool* stop) {
       while (*stop == false) { // wait for separate thread to end evaluation
         //cout << "stop = false\n";
         Node* N = root;
@@ -131,29 +134,51 @@ class MonteCarloTree {
           backpropagate(N, win);
         }
       }
-      cout << "stop = true\n";
+      //cout << "stop = true\n";
       // return list of best actions
-      Node* node = root->children[0];
+      Node* node = root;
+      if (!node->children.empty())
+        node = root->children[0];
       for (Node* N : root->children) {
         if (N->UCB(Ce) > node->UCB(Ce))
           node = N;
       }
       *A = node->action;
       *wins = node->wins;
-      *confidence = node->visits;
+      *visits = node->visits;
+    }
+
+    bool advance(Action A) {
+      Node* n = NULL;
+      for (Node* N : root->children) {
+        if (N->action == A)
+          n = N;
+      }
+      if (!n) {
+        cout << "error: move not possible\n";
+        return false;
+      }
+      else {
+        E.advance(A);
+        advance(n);
+        return true;
+      }
     }
 
     void advance(Node* R) {
-      if (R->parent != root)
-        advance(R->parent);
+      //// Recursively advance to parent node first
+      //if (R->parent != root)
+      //  advance(R->parent);
 
+      // Delete all other choices
       for (Node* N : root->children) {
         if (N != R)
-          delete N; // implicitly delete children of N
+          delete N; // implicitly delete grandchildren
       }
       root->children.clear();
       delete root;
       root = R;
+      root->parent = NULL;
     }
 
     //float UCB(Node n) {
@@ -162,6 +187,10 @@ class MonteCarloTree {
     //    return v;
     //  return v + C*(math.sqrt(math.ln(n.parent->visits)/n.visits))
     //}
+
+    vector<Action> getMoveList() {
+      return E.getHist();
+    }
 
 };
 
