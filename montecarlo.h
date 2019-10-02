@@ -155,14 +155,26 @@ class MonteCarloTree {
           n = N;
       }
       if (!n) {
-        cout << "error: move not possible\n";
-        return false;
+        vector<Action> A_list;
+        E.getLegalMoves(&A_list, root->state);
+        bool valid = false;
+        for (Action B : A_list) {
+          if (A == B)
+            valid = true;
+        }
+        if (valid) {
+          Node* child = new Node(root, A, E.advance(root->state, A));
+          root->children.push_back(child);
+          n = child;
+        }
+        else {
+          cout << "error: move not possible\n";
+          return false;
+        }
       }
-      else {
-        E.advance(A);
-        advance(n);
-        return true;
-      }
+      E.advance(A);
+      advance(n);
+      return true;
     }
 
     void advance(Node* R) {

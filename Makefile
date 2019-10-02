@@ -4,7 +4,7 @@ test: test.cpp
 	./test
 
 simgame: simgame.cpp
-	g++ -g -Wall -pthread $< -o $@
+	g++ -g -Wall -O3 -pthread $< -o $@
 
 playgame: playgame.cpp
 	g++ -g -Wall -O3 -pthread $< -o $@
