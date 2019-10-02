@@ -938,7 +938,7 @@ class Engine {
     bool player_stalemate(BoardState BS) {
       // if active player has no moves and is not in check, stalemate
       bool stalemate = true;
-      int player = BS.turn*2 - 1;
+      int player = BS.turn%2 - 1;
       int ki = 0;
       int kj = 0;
       // sanity check that both kings are present
@@ -1127,6 +1127,9 @@ class Engine {
       check_pawns(&S);
       if (check_stalemate(S))
         S.winner = 0.5;
+      float w = check_kings(S);
+      if (w != -1.0)
+        S.winner = w;
       S.turn++;
       return S;
     }
@@ -1140,56 +1143,58 @@ class Engine {
     }
 
     void printBoard(BoardState BS) {
-      cout << "┌───┬───┬───┬───┬───┬───┬───┬───┐\n";
+      cout << "  ┌───┬───┬───┬───┬───┬───┬───┬───┐\n";
       for (int j = 7; j >= 0; --j) {
+        cout << char('1'+j) << " │";
         for (int i = 0; i < 8; ++i) {
           switch (BS.board[i][j]) {
             case w_pawn:
-              cout << "│ P ";
+              cout << " P │";
               break;
             case w_bishop:
-              cout << "│ B ";
+              cout << " B │";
               break;
             case w_knight:
-              cout << "│ N ";
+              cout << " N │";
               break;
             case w_rook:
-              cout << "│ R ";
+              cout << " R │";
               break;
             case w_queen:
-              cout << "│ Q ";
+              cout << " Q │";
               break;
             case w_king:
-              cout << "│ K ";
+              cout << " K │";
               break;
             case b_pawn:
-              cout << "│ p ";
+              cout << " p │";
               break;
             case b_bishop:
-              cout << "│ b ";
+              cout << " b │";
               break;
             case b_knight:
-              cout << "│ n ";
+              cout << " n │";
               break;
             case b_rook:
-              cout << "│ r ";
+              cout << " r │";
               break;
             case b_queen:
-              cout << "│ q ";
+              cout << " q │";
               break;
             case b_king:
-              cout << "│ k ";
+              cout << " k │";
               break;
             default: // blank
-              cout << "│   ";
+              cout << "   │";
               break;
           }
         }
-        cout << "│\n";
+        cout << "\n";
         if (j != 0)
-          cout << "├───┼───┼───┼───┼───┼───┼───┼───┤\n";
+          cout << "  ├───┼───┼───┼───┼───┼───┼───┼───┤\n";
       }
-      cout << "└───┴───┴───┴───┴───┴───┴───┴───┘\n";
+      cout << "  └───┴───┴───┴───┴───┴───┴───┴───┘\n";
+      cout << "    A   B   C   D   E   F   G   H  \n";
     }
 
 };
