@@ -1,7 +1,7 @@
 #ifndef BOARDSTATE_H
 #define BOARDSTATE_H
 
-enum piece {
+enum piece : char {
   w_pawn = 1,
   w_bishop = 2,
   w_knight = 3,
@@ -19,8 +19,8 @@ enum piece {
 
 struct BoardState {
   piece board[8][8];
-  int turn;
-  int winner;
+  short int turn;
+  char winner;
 };
 
 #endif
