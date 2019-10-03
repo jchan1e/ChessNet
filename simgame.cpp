@@ -6,14 +6,14 @@ int main(int argc, char** argv) {
   float C1 = sqrt(2);
   float C2 = sqrt(2);
   int n = 10;
-  if (argc > 3) {
+  if (argc > 2) {
     C1 = atof(argv[1]);
     C2 = atof(argv[2]);
   }
-  if (argc > 4) {
+  if (argc > 3) {
     n = atoi(argv[3]);
   }
-  else if (argc == 2) {
+  if (argc == 2) {
     n = atoi(argv[1]);
   }
   MonteCarloTree M(true, C1);
@@ -31,7 +31,7 @@ int main(int argc, char** argv) {
   while (!quit) {
     // spawn computation thread and run for n seconds
     stop = false;
-    thread MCTthread1(&MonteCarloTree::run, M, &wins, &visits, &A, &stop);
+    thread MCTthread1(&MonteCarloTree::Run, &M, &wins, &visits, &A, &stop);
     usleep(n*1000000);
     stop = true;
     MCTthread1.join();
@@ -55,7 +55,7 @@ int main(int argc, char** argv) {
 
     // spawn computation thread and run for n seconds
     stop = false;
-    thread MCTthread2(&MonteCarloTree::run, N, &wins, &visits, &A, &stop);
+    thread MCTthread2(&MonteCarloTree::Run, &N, &wins, &visits, &A, &stop);
     usleep(n*1000000);
     stop = true;
     MCTthread2.join();
@@ -68,8 +68,8 @@ int main(int argc, char** argv) {
 
     N.E.printBoard();
     // Check if game has ended
-    if (N.root->endstate || M.root->state.winner != -1) {
-      vector<Action> Hist = M.getMoveList();
+    if (N.root->endstate || N.root->state.winner != -1) {
+      vector<Action> Hist = N.getMoveList();
       for (Action B : Hist) {
         cout << char('A'+B.i1) << B.j1+1 << " " << char('A'+B.i2) << B.j2+1 << endl;
       }

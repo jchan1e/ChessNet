@@ -3,40 +3,20 @@
 #include <unistd.h>
 
 int main(int argc, char** argv) {
-  MonteCarloTree M(true, (float)sqrt(2.0));
+  MonteCarloTree M(false, (float)sqrt(2.0));
   bool stop = false;
   Action A;
   int visits;
   float wins;
   bool quit = false;
 
-  int n = 30;
-  thread MCTthread(&MonteCarloTree::run, M, &wins, &visits, &A, &stop);
-  usleep(2*n*1000000);
-  stop = true;
-  MCTthread.join();
+  int n = 60;
+  //thread MCTthread(&MonteCarloTree::run, M, &wins, &visits, &A, &stop);
+  //usleep(180*1000000);
+  //stop = true;
+  //MCTthread.join();
 
   while (!quit) {
-    // spawn computation thread and run for n seconds
-    stop = false;
-    thread MCTthread(&MonteCarloTree::run, M, &wins, &visits, &A, &stop);
-    usleep(n*1000000);
-    stop = true;
-    MCTthread.join();
-    cout << char('A'+A.i1) << 1+A.j1 << " " << char('A'+A.i2) << 1+A.j2 << endl;
-    cout << 100*wins/visits << "\% chance of victory\n";
-    cout << "node got " << visits << " of " << M.root->visits << " simulations run\n";
-    // Make the MCT's suggested move
-    M.advance(A);
-
-    M.E.printBoard();
-    // Check if game has ended
-    if (M.root->endstate || M.root->state.winner != -1) {
-      M.getMoveList();
-      quit = true;
-      return 0;
-    }
-
     // Get Human player's next move
     bool success = false;
     do {
@@ -61,6 +41,27 @@ int main(int argc, char** argv) {
       quit = true;
       return 0;
     }
+    //
+    // spawn computation thread and run for n seconds
+    stop = false;
+    thread MCTthread(&MonteCarloTree::run, M, &wins, &visits, &A, &stop);
+    usleep(n*1000000);
+    stop = true;
+    MCTthread.join();
+    cout << char('A'+A.i1) << 1+A.j1 << " " << char('A'+A.i2) << 1+A.j2 << endl;
+    cout << 100*wins/visits << "\% chance of victory\n";
+    cout << "node got " << visits << " of " << M.root->visits << " simulations run\n";
+    // Make the MCT's suggested move
+    M.advance(A);
+
+    M.E.printBoard();
+    // Check if game has ended
+    if (M.root->endstate || M.root->state.winner != -1) {
+      M.getMoveList();
+      quit = true;
+      return 0;
+    }
+
   }
 
   return 0;

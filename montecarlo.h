@@ -6,6 +6,8 @@
 #include <cstdlib>
 #include <cmath>
 #include <vector>
+#include <thread>
+#include <mutex>
 
 #include <iostream>
 
@@ -15,32 +17,46 @@ class Node {
     vector<Node*> children;
     float wins = 0.0;
     int visits = 0;
+    bool expanded = false;
     bool endstate = false;
     bool opponent;
     Action action;
     BoardState state;
 
+    mutex mtx;
+
     Node(Node* P, Action A, BoardState S) {
+      mtx.lock();
       parent = P;
       action = A;
       state = S;
       if (P != NULL)
         opponent = !parent->opponent;
+      mtx.unlock();
     }
 
     ~Node() {
+      mtx.lock();
       for (Node* child : children) {
         delete child;
       }
+      mtx.unlock();
     }
 
-    float UCB(float C) const {
+    float UCB(float C) {
       // Upper Confidence Bound
       // Lower C favors exploitation, higher favors exploration
-      if (!opponent)
-        return wins/visits + C*(sqrt(log(parent->visits)/visits));
-      else
-        return 1.0 - wins/visits + C*(sqrt(log(parent->visits)/visits));
+      mtx.lock();
+      float explore = C*(sqrt(log(parent->visits)/visits));
+      float exploit = 0.0;
+      if (visits != 0) {
+        if (!opponent)
+          exploit = wins/visits;
+        else
+          exploit = 1.0 - wins/visits;
+      }
+      mtx.unlock();
+      return exploit + explore;
     }
 
     //bool operator<(const Node& b) {
@@ -52,36 +68,47 @@ class Node {
 class MonteCarloTree {
   public:
     Node* root;
+    bool White;
     Engine E;
     float Ce; // exploration bias parameter
   public:
-    MonteCarloTree(bool opp, float c) {
+    MonteCarloTree(bool white, float c) {
       Ce = c;
       Action A = {0};
+      White = white;
       root = new Node(NULL, A, E.getBoardState());
-      root->opponent = opp;
+      root->opponent = White;
     }
 
     void backpropagate(Node* N, float score) {
-      root->visits += 1;
       while (N->parent != NULL) {
+        N->mtx.lock();
         N->wins += score;
-        N->visits += 1;
+        N->visits++;
+        N->mtx.unlock();
         N = N->parent;
       }
+      root->mtx.lock();
+      root->visits++;
+      root->mtx.unlock();
     }
 
     void expand(Node* N) {
-      vector<Action> A_list;
-      int moves = E.getLegalMoves(&A_list, N->state);
-      if (moves > 0) {
-        for (int i=0; i < moves; ++i){
-          Node* n = new Node(N, A_list[i], E.advance(N->state, A_list[i]));
-          N->children.push_back(n);
+      N->mtx.lock();
+      if (!N->expanded) {
+        N->expanded = true;
+        vector<Action> A_list;
+        int moves = E.getLegalMoves(&A_list, N->state);
+        if (moves > 0) {
+          for (int i=0; i < moves; ++i){
+            Node* n = new Node(N, A_list[i], E.advance(N->state, A_list[i]));
+            N->children.push_back(n);
+          }
         }
+        else
+          N->endstate = true;
       }
-      else
-        N->endstate = true;
+      N->mtx.unlock();
     }
 
     //void setRoot(BoardState BS) {
@@ -99,20 +126,36 @@ class MonteCarloTree {
       return BS.winner;
     }
 
-    void run(float* wins, int* visits, Action* A, bool* stop) {
+    void Run(float* wins, int* visits, Action* A, bool* stop) {
+      //int threadCount = thread::hardware_concurrency();
+      int threadCount = 4;
+      vector<thread> threads;
+      for (int i=0; i < threadCount; ++i) {
+        thread th(&MonteCarloTree::run, this, stop);
+        threads.push_back(move(th));
+      }
+      for (thread &th : threads) {
+        th.join();
+      }
+      getBestChoice(wins, visits, A);
+    }
+
+    void run(bool* stop) {
       while (*stop == false) { // wait for separate thread to end evaluation
-        //cout << "stop = false\n";
         Node* N = root;
-        //traverse the tree by highest UCB until leaf node
+        //traverse the tree by highest UCB until we reach a leaf node
         while (!N->children.empty()) {
+          N->mtx.lock();
           int best_i = 0;
           float best_UCB = N->children[0]->UCB(Ce);
           for (unsigned int i=1; i < N->children.size(); ++i) {
-            if (N->children[i]->UCB(Ce) > best_UCB) {
+            float i_ucb = N->children[i]->UCB(Ce);
+            if (i_ucb > best_UCB) {
               best_i = i;
-              best_UCB = N->children[i]->UCB(Ce);
+              best_UCB = i_ucb;
             }
           }
+          N->mtx.unlock();
           N = N->children[best_i];
         }
 
@@ -121,6 +164,8 @@ class MonteCarloTree {
         if (N->visits == 0 || N->endstate) {
           // if node is unvisited or endstate, run rollout and backpropagate
           float win = rollout(N->state);
+          if (!White)
+            win = 1.0 - win;
           backpropagate(N, win);
         }
         else {
@@ -131,16 +176,20 @@ class MonteCarloTree {
             N = N->children[r];
           }
           float win = rollout(N->state);
+          if (!White)
+            win = 1.0 - win;
           backpropagate(N, win);
         }
       }
-      //cout << "stop = true\n";
+    }
+
+    void getBestChoice(float* wins, int* visits, Action* A) {
       // return list of best actions
       Node* node = root;
       if (!node->children.empty())
         node = root->children[0];
       for (Node* N : root->children) {
-        if (N->UCB(Ce) > node->UCB(Ce))
+        if (N->wins/N->visits > node->wins/node->visits)
           node = N;
       }
       *A = node->action;
