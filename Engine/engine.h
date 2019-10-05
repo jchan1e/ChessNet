@@ -956,11 +956,11 @@ class Engine {
       }
 
       float w = check_kings(BS);
-      if (w != -1) {
+      if (w != -1.0) {
         winner = w;
       }
 
-      if (winner != -1.0) {
+      if (winner != -1) {
         a_list->clear();
         moves = -1;
       }
