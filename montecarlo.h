@@ -123,8 +123,8 @@ class MonteCarloTree {
     }
 
     void Run(float* wins, int* visits, Action* A, bool* stop) {
-      //int threadCount = thread::hardware_concurrency();
-      int threadCount = 4;
+      int threadCount = thread::hardware_concurrency();
+      //int threadCount = 4;
       vector<thread> threads;
       for (int i=0; i < threadCount; ++i) {
         thread th(&MonteCarloTree::run, this, stop);
@@ -185,7 +185,7 @@ class MonteCarloTree {
       if (!node->children.empty())
         node = root->children[0];
       for (Node* N : root->children) {
-        if (N->UCB(0) > node->UCB(0))
+        if (N->UCB(1) > node->UCB(1))
           node = N;
       }
       *A = node->action;
