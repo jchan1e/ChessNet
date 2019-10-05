@@ -10,7 +10,7 @@ int main(int argc, char** argv) {
   float wins;
   bool quit = false;
 
-  int n = 60;
+  int n = 6;
   //thread MCTthread(&MonteCarloTree::run, M, &wins, &visits, &A, &stop);
   //usleep(180*1000000);
   //stop = true;
@@ -21,7 +21,7 @@ int main(int argc, char** argv) {
     bool success = false;
     do {
       unsigned char i1, i2, j1, j2;
-      cout << "Enter Black's Next Move\n";
+      cout << "Enter Player's Next Move\n";
       cin.clear();
       cin >> i1 >> j1 >> i2 >> j2;
       //cout << int(i1) << " " << int(j1) << " " << int(i2) << " " << int(j2) << endl;
@@ -44,7 +44,7 @@ int main(int argc, char** argv) {
     //
     // spawn computation thread and run for n seconds
     stop = false;
-    thread MCTthread(&MonteCarloTree::run, M, &wins, &visits, &A, &stop);
+    thread MCTthread(&MonteCarloTree::Run, &M, &wins, &visits, &A, &stop);
     usleep(n*1000000);
     stop = true;
     MCTthread.join();

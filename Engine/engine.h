@@ -40,7 +40,7 @@ class Engine {
     }
 
     bool check_stalemate(BoardState BS) {
-      if (BS.turn > 400)
+      if (BS.turn > 256)
         return true;
 
       int Pcount = 0;
@@ -109,6 +109,10 @@ class Engine {
     Engine() {
       state.turn = 1;
       state.winner = -1;
+      state.w_castle_kingside = true;
+      state.w_castle_queenside = true;
+      state.b_castle_kingside = true;
+      state.b_castle_queenside = true;
       for (int i=0; i < 8; ++i) {
         for (int j=0; j < 8; ++j) {
           state.board[i][j] = blank;
@@ -518,10 +522,10 @@ class Engine {
                   break;
 
                 case b_king:
-                  for (int ii=i-1; ii<= i+1; ++ii) {
+                  for (int ii=i-1; ii <= i+1; ++ii) {
                     for (int jj=j-1; jj <=j+1; ++jj) {
                       if (0 <= ii && ii < 8 &&
-                          0 < jj && jj < 8 &&
+                          0 <= jj && jj < 8 &&
                           BS.board[ii][jj] >= blank) {
                         Action a = {i, j, ii, jj};
                         a_list->push_back(a);
@@ -529,9 +533,23 @@ class Engine {
                       }
                     }
                   }
+                  if (BS.b_castle_kingside) {
+                    if (BS.board[5][7] == blank && BS.board[6][7] == blank) {
+                      Action a = {4, 7, 6, 7};
+                      a_list->push_back(a);
+                      moves++;
+                    }
+                  }
+                  if (BS.b_castle_queenside) {
+                    if (BS.board[3][7] == blank && BS.board[2][7] == blank && BS.board[1][7] == blank) {
+                      Action a = {4, 7, 2, 7};
+                      a_list->push_back(a);
+                      moves++;
+                    }
+                  }
                   break;
 
-                default: // white pieces on black's turn
+                default: // blanks and white pieces on black's turn
                   break;
               }
             }
@@ -895,10 +913,10 @@ class Engine {
                   break;
 
                 case w_king:
-                  for (int ii=i-1; ii<= i+1; ++ii) {
+                  for (int ii=i-1; ii <= i+1; ++ii) {
                     for (int jj=j-1; jj <=j+1; ++jj) {
                       if (0 <= ii && ii < 8 &&
-                          0 < jj && jj < 8 &&
+                          0 <= jj && jj < 8 &&
                           BS.board[ii][jj] <= blank) {
                         Action a = {i, j, ii, jj};
                         a_list->push_back(a);
@@ -906,9 +924,23 @@ class Engine {
                       }
                     }
                   }
+                  if (BS.w_castle_kingside) {
+                    if (BS.board[5][0] == blank && BS.board[6][0] == blank) {
+                      Action a = {4, 0, 6, 0};
+                      a_list->push_back(a);
+                      moves++;
+                    }
+                  }
+                  if (BS.w_castle_queenside) {
+                    if (BS.board[3][0] == blank && BS.board[2][0] == blank && BS.board[1][0] == blank) {
+                      Action a = {4, 0, 2, 0};
+                      a_list->push_back(a);
+                      moves++;
+                    }
+                  }
                   break;
 
-                default: //shouldn't be possible to reach this line
+                default: //blanks and black pieces on white's turn
                   break;
               }
             }
@@ -1119,9 +1151,58 @@ class Engine {
     }
 
     BoardState advance(BoardState BS, Action a) {
+      BoardState S = BS;
+
       // new position = old position
       // old position = blank
-      BoardState S = BS;
+
+      // If castling or moving king/rooks, extra steps
+      if (a.i1 == 4 && a.j1 == 7) {
+        if (S.b_castle_kingside &&
+            a.i2 == 6 && a.j2 == 7) {
+          S.board[5][7] = S.board[7][7];
+          S.board[7][7] = blank;
+        }
+        else if (S.b_castle_queenside &&
+            a.i2 == 2 && a.j2 == 7) {
+          S.board[3][7] = S.board[0][7];
+          S.board[0][7] = blank;
+        }
+        S.b_castle_kingside = false;
+        S.b_castle_queenside = false;
+      }
+      else if ((a.i1 == 7 && a.j1 == 7) ||
+               (a.i2 == 7 && a.j2 == 7)) {
+        S.b_castle_kingside = false;
+      }
+      else if ((a.i1 == 0 && a.j1 == 7) ||
+               (a.i2 == 0 && a.j2 == 7)) {
+        S.b_castle_queenside = false;
+      }
+      //  ^ black ^  //  v white v  //
+      if (a.i1 == 4 && a.j1 == 0) {
+        if (S.w_castle_kingside &&
+            a.i2 == 6 && a.j2 == 0) {
+          S.board[5][0] = S.board[7][0];
+          S.board[7][0] = blank;
+        }
+        else if (S.w_castle_queenside &&
+            a.i2 == 2 && a.j2 == 0) {
+          S.board[3][0] = S.board[0][0];
+          S.board[0][0] = blank;
+        }
+        S.w_castle_kingside = false;
+        S.w_castle_queenside = false;
+      }
+      else if ((a.i1 == 7 && a.j1 == 0) ||
+               (a.i2 == 7 && a.j2 == 0)) {
+        S.w_castle_kingside = false;
+      }
+      else if ((a.i1 == 0 && a.j1 == 0) ||
+               (a.i2 == 0 && a.j2 == 0)) {
+        S.w_castle_queenside = false;
+      }
+
       S.board[a.i2][a.j2] = S.board[a.i1][a.j1];
       S.board[a.i1][a.j1] = blank;
       check_pawns(&S);
