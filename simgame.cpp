@@ -46,8 +46,10 @@ int main(int argc, char** argv) {
     // Check if game has ended
     if (M.root->endstate || M.root->state.winner != -1) {
       vector<Action> Hist = M.getMoveList();
+      int i = 0;
       for (Action B : Hist) {
-        cout << char('A'+B.i1) << B.j1+1 << " " << char('A'+B.i2) << B.j2+1 << endl;
+        ++i;
+        cout << i << "\t" << char('A'+B.i1) << B.j1+1 << " " << char('A'+B.i2) << B.j2+1 << endl;
       }
       quit = true;
       return 0;
@@ -70,8 +72,10 @@ int main(int argc, char** argv) {
     // Check if game has ended
     if (N.root->endstate || N.root->state.winner != -1) {
       vector<Action> Hist = N.getMoveList();
+      int i = 0;
       for (Action B : Hist) {
-        cout << char('A'+B.i1) << B.j1+1 << " " << char('A'+B.i2) << B.j2+1 << endl;
+        ++i;
+        cout << i << "\t" << char('A'+B.i1) << B.j1+1 << " " << char('A'+B.i2) << B.j2+1 << endl;
       }
       quit = true;
       return 0;
