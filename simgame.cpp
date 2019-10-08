@@ -51,6 +51,13 @@ int main(int argc, char** argv) {
         ++i;
         cout << i << "\t" << char('A'+B.i1) << B.j1+1 << " " << char('A'+B.i2) << B.j2+1 << endl;
       }
+      string w = "Tie";
+      float W = M.root->state.winner;
+      if (W == 0.0)
+        w = "Black";
+      if (W == 1.0)
+        w = "White";
+      cout << "Winner: " << w << endl;
       quit = true;
       return 0;
     }
@@ -77,6 +84,13 @@ int main(int argc, char** argv) {
         ++i;
         cout << i << "\t" << char('A'+B.i1) << B.j1+1 << " " << char('A'+B.i2) << B.j2+1 << endl;
       }
+      string w = "Tie";
+      float W = N.root->state.winner;
+      if (W == 0.0)
+        w = "Black";
+      if (W == 1.0)
+        w = "White";
+      cout << "Winner: " << w << endl;
       quit = true;
       return 0;
     }

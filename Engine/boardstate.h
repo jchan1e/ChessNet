@@ -27,4 +27,22 @@ struct BoardState {
   bool b_castle_queenside;
 };
 
+inline bool operator==(const BoardState& lhs, const BoardState& rhs) {
+  if (lhs.w_castle_kingside != rhs.w_castle_kingside)
+    return false;
+  if (lhs.w_castle_queenside != rhs.w_castle_queenside)
+    return false;
+  if (lhs.b_castle_kingside != rhs.b_castle_kingside)
+    return false;
+  if (lhs.b_castle_queenside != rhs.b_castle_queenside)
+    return false;
+  for (int i=0; i < 8; ++i) {
+    for (int j=0; j < 8; ++j) {
+      if (lhs.board[i][j] != rhs.board[i][j])
+        return false;
+    }
+  }
+  return true;
+}
+
 #endif
