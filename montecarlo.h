@@ -98,8 +98,8 @@ class MonteCarloTree {
       N->mtx.lock();
       if (!N->expanded) {
         N->expanded = true;
-        if (N->parent != NULL && N->parent->parent != NULL && N->parent->parent->state == N->state &&
-            N->parent->parent->parent != NULL && N->parent->state == N->parent->parent->parent->state) {
+        if (N->parent != NULL && N->parent->parent != NULL && N->parent->parent->parent != NULL &&  N->parent->parent->parent->parent != NULL &&
+            N->state == N->parent->parent->parent->parent->state) {
           N->endstate = true;
           N->state.winner = 0.5;
         }
