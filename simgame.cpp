@@ -33,6 +33,8 @@ int main(int argc, char** argv) {
     stop = false;
     thread MCTthread1(&MonteCarloTree::Run, &M, &wins, &visits, &A, &stop);
     usleep(n*1000000);
+    if (M.E.getBoardState().turn == 1)
+      usleep(n*1000000);
     stop = true;
     MCTthread1.join();
     cout << char('A'+A.i1) << 1+A.j1 << " " << char('A'+A.i2) << 1+A.j2 << endl;
@@ -66,6 +68,8 @@ int main(int argc, char** argv) {
     stop = false;
     thread MCTthread2(&MonteCarloTree::Run, &N, &wins, &visits, &A, &stop);
     usleep(n*1000000);
+    if (N.E.getBoardState().turn == 2)
+      usleep(n*1000000);
     stop = true;
     MCTthread2.join();
     cout << char('A'+A.i1) << 1+A.j1 << " " << char('A'+A.i2) << 1+A.j2 << endl;
