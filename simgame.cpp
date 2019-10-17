@@ -1,21 +1,30 @@
 #include "montecarlo.h"
 #include <thread>
 #include <unistd.h>
+#include <iostream>
+#include <fstream>
 
 int main(int argc, char** argv) {
   float C1 = sqrt(2);
   float C2 = sqrt(2);
   int n = 10;
-  if (argc > 2) {
-    C1 = atof(argv[1]);
-    C2 = atof(argv[2]);
-  }
-  if (argc > 3) {
-    n = atoi(argv[3]);
-  }
+  string filename = "outfile.game";
   if (argc == 2) {
     n = atoi(argv[1]);
   }
+  if (argc == 3) {
+    n = atoi(argv[1]);
+    filename = argv[2];
+  }
+  if (argc > 3) {
+    C1 = atof(argv[1]);
+    C2 = atof(argv[2]);
+    n = atoi(argv[3]);
+  }
+  if (argc == 4) {
+    filename = argv[4];
+  }
+
   MonteCarloTree M(true, C1);
   MonteCarloTree N(false, C2);
   bool stop = false;
@@ -47,21 +56,7 @@ int main(int argc, char** argv) {
     M.E.printBoard();
     // Check if game has ended
     if (M.root->endstate || M.root->state.winner != -1) {
-      vector<Action> Hist = M.getMoveList();
-      int i = 0;
-      for (Action B : Hist) {
-        ++i;
-        cout << i << "\t" << char('A'+B.i1) << B.j1+1 << " " << char('A'+B.i2) << B.j2+1 << endl;
-      }
-      string w = "Tie";
-      float W = M.root->state.winner;
-      if (W == 0.0)
-        w = "Black";
-      if (W == 1.0)
-        w = "White";
-      cout << "Winner: " << w << endl;
-      quit = true;
-      return 0;
+      break;
     }
 
     // spawn computation thread and run for n seconds
@@ -82,48 +77,32 @@ int main(int argc, char** argv) {
     N.E.printBoard();
     // Check if game has ended
     if (N.root->endstate || N.root->state.winner != -1) {
-      vector<Action> Hist = N.getMoveList();
-      int i = 0;
-      for (Action B : Hist) {
-        ++i;
-        cout << i << "\t" << char('A'+B.i1) << B.j1+1 << " " << char('A'+B.i2) << B.j2+1 << endl;
-      }
-      string w = "Tie";
-      float W = N.root->state.winner;
-      if (W == 0.0)
-        w = "Black";
-      if (W == 1.0)
-        w = "White";
-      cout << "Winner: " << w << endl;
-      quit = true;
-      return 0;
+      break;
     }
 
-    //// Get Human player's next move
-    //bool success = false;
-    //do {
-    //  unsigned char i1, i2, j1, j2;
-    //  cout << "Enter Black's Next Move\n";
-    //  cin.clear();
-    //  cin >> i1 >> j1 >> i2 >> j2;
-    //  //cout << int(i1) << " " << int(j1) << " " << int(i2) << " " << int(j2) << endl;
-    //  i1 -= 'A';
-    //  i2 -= 'A';
-    //  j1 -= '1';
-    //  j2 -= '1';
-    //  //cout << int(i1) << " " << int(j1) << " " << int(i2) << " " << int(j2) << endl;
-    //  Action B = {i1,j1,i2,j2};
-    //  success = M.advance(B);
-    //} while (!success);
-
-    //M.E.printBoard();
-    //// Check if game has ended
-    //if (M.root->endstate || M.root->state.winner != -1) {
-    //  M.getMoveList();
-    //  quit = true;
-    //  return 0;
-    //}
   }
+
+  // Export game log to file
+  ofstream outfile(filename);
+
+  string w = "Tie";
+  float W = M.root->state.winner;
+  if (W == 0.0)
+    w = "Black";
+  if (W == 1.0)
+    w = "White";
+  cout << "Winner: " << w << endl;
+  outfile << W << endl;
+
+  vector<Action> Hist = M.getMoveList();
+  int i = 0;
+  for (Action B : Hist) {
+    ++i;
+    cout << i << "\t" << char('A'+B.i1) << B.j1+1 << " " << char('A'+B.i2) << B.j2+1 << endl;
+    outfile << B.i1 << " " << B.j1 << " " << B.i2 << " " << B.j2 << endl;
+  }
+
+  outfile.close();
 
   return 0;
 }
