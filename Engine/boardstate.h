@@ -20,7 +20,7 @@ enum piece : char {
 struct BoardState {
   piece board[8][8];
   short int turn;
-  char winner;
+  float winner;
   bool w_castle_kingside;
   bool w_castle_queenside;
   bool b_castle_kingside;
