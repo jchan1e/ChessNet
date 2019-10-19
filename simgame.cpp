@@ -3,39 +3,57 @@
 #include <unistd.h>
 #include <iostream>
 #include <fstream>
+#include <string>
 
 int main(int argc, char** argv) {
-  float C1 = sqrt(2);
-  float C2 = sqrt(2);
   int n = 10;
-  string filename = "outfile.game";
-  if (argc == 2) {
-    n = atoi(argv[1]);
+  if (argc < 4) {
+    cout << "Usage: simgame agentfile1.agent agentfile2.agent gamelogfile.game [simulation_time]\n";
+    return 0;
   }
-  if (argc == 3) {
-    n = atoi(argv[1]);
-    filename = argv[2];
+  else if (argc == 5)
+    n = atoi(argv[4]);
+  char* agentfile1 = argv[1];
+  char* agentfile2 = argv[2];
+  char* logfile = argv[3];
+
+  float C1, C2;
+  char* Nfile1;
+  char* Nfile2;
+
+  ifstream Afile1(agentfile1);
+  if (Afile1.is_open()) {
+    Afile1 >> C1; // toss training alpha
+    Afile1 >> C1; // toss training alpha decay ratio
+    Afile1 >> C1; // get montecarlo bias parameter
+    Afile1 >> Nfile1;
+    Afile1.close();
   }
-  if (argc > 3) {
-    C1 = atof(argv[1]);
-    C2 = atof(argv[2]);
-    n = atoi(argv[3]);
-  }
-  if (argc == 4) {
-    filename = argv[4];
+  else {
+    cout << "Error: Unable to open file: " << agentfile1 << endl;
+    return 1;
   }
 
-  MonteCarloTree M(true, C1);
-  MonteCarloTree N(false, C2);
+  ifstream Afile2(agentfile2);
+  if (Afile2.is_open()) {
+    Afile2 >> C2; // toss training alpha
+    Afile2 >> C2; // toss training alpha decay ratio
+    Afile2 >> C2; // get montecarlo bias parameter
+    Afile2 >> Nfile2;
+    Afile2.close();
+  }
+  else {
+    cout << "Error: Unable to open file: " << agentfile2 << endl;
+    return 1;
+  }
+
+  MonteCarloTree M(true, C1, Nfile1);
+  MonteCarloTree N(false, C2, Nfile2);
   bool stop = false;
   Action A;
   int visits;
   float wins;
   bool quit = false;
-  //thread MCTthread(&MonteCarloTree::run, M, &wins, &visits, &A, &stop);
-  //usleep(2*n*1000000);
-  //stop = true;
-  //MCTthread.join();
 
   while (!quit) {
     // spawn computation thread and run for n seconds
@@ -83,7 +101,7 @@ int main(int argc, char** argv) {
   }
 
   // Export game log to file
-  ofstream outfile(filename);
+  ofstream outfile(logfile);
 
   string w = "Tie";
   float W = M.root->state.winner;

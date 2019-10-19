@@ -2,22 +2,44 @@
 #include <thread>
 #include <unistd.h>
 #include <cstring>
+#include <iostream>
 
 int main(int argc, char** argv) {
   bool isWhite = false;
-  if (argc > 1) {
-    if (strcmp(argv[1], "black") == 0) {
+  if (argc < 3) {
+    cout << "Usage: playgame agentfile.agent computation_time [black]\n";
+    return 0;
+  }
+  if (argc > 3) {
+    if (strcmp(argv[3], "black") == 0) {
       isWhite = true;
     }
   }
-  MonteCarloTree M(isWhite, (float)sqrt(2.0));
+
+  float C;
+  char* NNfile;
+
+  char* agentfile = argv[1];
+  ifstream Afile(agentfile);
+  if (Afile.is_open()) {
+    Afile >> C; // toss training alpha
+    Afile >> C; // toss alpha decay ratio
+    Afile >> C; // get montecarlo exploration bias
+    Afile >> NNfile;
+  }
+  else {
+    cout << "Error: Unable to open file: " << agentfile << endl;
+    return 1;
+  }
+
+  MonteCarloTree M(isWhite, C, NNfile);
   bool stop = false;
   Action A;
   int visits;
   float wins;
   bool quit = false;
 
-  int n = 6;
+  int n = atoi(argv[2]);
   //thread MCTthread(&MonteCarloTree::run, M, &wins, &visits, &A, &stop);
   //usleep(180*1000000);
   //stop = true;

@@ -2,6 +2,7 @@
 #define MONTECARLO_H
 
 #include "Engine/engine.h"
+#include "NN/neuralnet.h"
 
 #include <cstdlib>
 #include <cmath>
@@ -71,13 +72,20 @@ class MonteCarloTree {
     bool White;
     Engine E;
     float Ce; // exploration bias parameter
+    Neuralnet* N;
   public:
-    MonteCarloTree(bool white, float c) {
+    MonteCarloTree(bool white, float c, char* Agentfile) {
       Ce = c;
       Action A = {0};
       White = white;
       root = new Node(NULL, A, E.getBoardState());
       root->opponent = White;
+      N = new Neuralnet(Agentfile);
+    }
+
+    ~MonteCarloTree() {
+      delete root;
+      delete N;
     }
 
     void backpropagate(Node* N, float score) {
@@ -120,6 +128,7 @@ class MonteCarloTree {
     }
 
     float rollout(BoardState BS) {
+
       BoardState S = BS;
       vector<Action> A_list;
       while (E.getLegalMoves(&A_list, S) > 0) { // && BS.winner == -1) {
@@ -136,7 +145,7 @@ class MonteCarloTree {
       int threadCount = 1;
       vector<thread> threads;
       for (int i=0; i < threadCount; ++i) {
-        thread th(&MonteCarloTree::run, this, stop);
+        thread th(&MonteCarloTree::run_thread, this, stop);
         threads.push_back(move(th));
       }
       for (thread &th : threads) {
@@ -145,7 +154,7 @@ class MonteCarloTree {
       getBestChoice(wins, visits, A);
     }
 
-    void run(bool* stop) {
+    void run_thread(bool* stop) {
       while (*stop == false) { // wait for separate thread to end evaluation
         Node* N = root;
         //traverse the tree by highest UCB until we reach a leaf node
