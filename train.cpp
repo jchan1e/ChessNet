@@ -89,10 +89,10 @@ int main (int argc, char** argv) {
           }
         }
         BS_array[12*64 + 0] = -1.0 + 2.0*(BS.turn%2);
-        BS_array[12*64 + 1] = BS.w_castle_kingside?1.0:0;
-        BS_array[12*64 + 2] = BS.w_castle_kingside?1.0:0;
-        BS_array[12*64 + 3] = BS.w_castle_kingside?1.0:0;
-        BS_array[12*64 + 4] = BS.w_castle_kingside?1.0:0;
+        BS_array[12*64 + 1] = BS.w_castle_kingside?1.0:0.0;
+        BS_array[12*64 + 2] = BS.w_castle_queenside?1.0:0.0;
+        BS_array[12*64 + 3] = BS.b_castle_kingside?1.0:0.0;
+        BS_array[12*64 + 4] = BS.b_castle_queenside?1.0:0.0;
 
         float* W = new float[2];
         W[0] = winner;
