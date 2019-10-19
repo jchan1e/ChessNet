@@ -20,5 +20,8 @@ train: train.cpp NN/neuralnet.o
 createAgent: createAgent.cpp NN/neuralnet.o
 	g++ -g -Wall -O3 $^ -o $@
 
+NN/neuralnet.o:
+	$(MAKE) -C NN/
+
 clean:
 	rm -f *.o test simgame playgame review train createAgent
