@@ -1,5 +1,5 @@
 
-all: simgame playgame review train createAgent
+all: simgame playgame review train #createAgent
 
 test: test.cpp montecarlo.h
 	g++ -g -Wall -pthread test.cpp -o test
