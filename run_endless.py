@@ -1,6 +1,8 @@
 import os
 import sys
 import random
+import multiprocessing
+import itertools
 
 def combineLayers(L1, L2): # L1 and L2 are lists of ints
     L = []
@@ -38,6 +40,10 @@ popName = "Population"
 generation = 0
 turn_time = 5
 
+#pool_size = 8
+#pool_size = os.cpu_count()/2
+pool_size = max(os.cpu_count()-4, 2)
+
 agent_nums = [int(os.path.split(a[:-6])[1]) for a in filter(lambda s: ".agent" in s, os.listdir("Agents/") + os.listdir("Agents/archive/"))]
 next_agent_num = max(agent_nums) + 1
 
@@ -46,19 +52,37 @@ if len(sys.argv) > 1:
 if len(sys.argv) > 2:
     generation = int(sys.argv[2])
 
+pool = multiprocessing.Pool(pool_size)
+
 while generation < 1:
     # simulate games between all member of current population
     #   save outputs to gamelogs folder
     agents = [a[:-6] for a in filter(lambda s: ".agent" in s, os.listdir("Agents/"))]
     wins = {agent:0 for agent in agents}
     os.system("mkdir gamelogs/gen{}".format(generation))
-    for agent1 in agents:
-        for agent2 in agents:
-            #if int(agent1) < int(agent2):
-            os.system("./simgame Agents/{0}.agent Agents/{1}.agent {2} > gamelogs/gen{3}/{0}.{1}.game".format(agent1, agent2, turn_time, generation))
-            winner = int(os.popen("head -1 gamelogs/gen{2}/{0}.{1}.game".format(agent1, agent2, generation)).read())
-            wins[agent1] += winner
-            wins[agent2] += 1-winner
+    # (Parallelize me)
+    #for agent1 in agents:
+    #    for agent2 in agents:
+    #        #if int(agent1) < int(agent2):
+    #        os.system("./simgame Agents/{0}.agent Agents/{1}.agent {2} > gamelogs/gen{3}/{0}.{1}.game".format(agent1, agent2, turn_time, generation))
+    #        winner = int(os.popen("head -1 gamelogs/gen{2}/{0}.{1}.game".format(agent1, agent2, generation)).read())
+    #        l.acquire()
+    #        wins[agent1] += winner
+    #        wins[agent2] += 1-winner
+    #        l.release()
+
+    args = list(itertools.product(agents, agents))
+    def simgame(agent1, agent2):
+        #if int(agent1) < int(agent2):
+        os.system("./simgame Agents/{0}.agent Agents/{1}.agent {2} > gamelogs/gen{3}/{0}.{1}.game".format(agent1, agent2, turn_time, generation))
+        winner = int(os.popen("head -1 gamelogs/gen{2}/{0}.{1}.game".format(agent1, agent2, generation)).read())
+        return (agent1, agent2, winner)
+
+    results = pool.starmap(simgame, args)
+
+    for (agent1, agent2, winner) in results:
+        wins[agent1] += winner
+        wins[agent2] += 1-winner
 
     # rotate out old logs
     if generation >= 3:
@@ -128,15 +152,19 @@ while generation < 1:
                 mutate *= rate
 
         args = " ".join([str(arg) for arg in [alpha, decay, bias, mutate]]) + " ".join([str(layer) for layer in layers])
-        cmd = "./createNN Agents/" + str(next_agent_num) + " " + args
+        cmd = "./createNN Agents/" + str(next_agent_num).zfill(4) + " " + args
         os.system(cmd)
 
         # train
-        targets.append(str(next_agent_num))
+        targets.append(str(next_agent_num).zfill(4))
         #os.system("./train Agents/" + next_agent_num + ".agent")
 
         next_agent_num += 1
 
     #bulk train (parallelize me)
-    for target in targets:
+    #for target in targets:
+    #    os.system("./train Agents/" + target + ".agent > Agents/" + target + ".log")
+    def train(target):
         os.system("./train Agents/" + target + ".agent > Agents/" + target + ".log")
+    pool.map(train, targets)
+
