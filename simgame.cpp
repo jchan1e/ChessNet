@@ -18,8 +18,8 @@ int main(int argc, char** argv) {
   char* logfile = argv[3];
 
   float C1, C2;
-  char* Nfile1;
-  char* Nfile2;
+  char Nfile1[256];
+  char Nfile2[256];
 
   ifstream Afile1(agentfile1);
   if (Afile1.is_open()) {

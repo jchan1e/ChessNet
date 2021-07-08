@@ -8,7 +8,7 @@ test: test.cpp montecarlo.h
 simgame: simgame.cpp NN/neuralnet.o montecarlo.h Engine/engine.h
 	g++ -g -Wall -O3 -pthread $< NN/neuralnet.o -o $@
 
-playgame: playgame.cpp montecarlo.h Engine/engine.h
+playgame: playgame.cpp NN/neuralnet.o montecarlo.h Engine/engine.h
 	g++ -g -Wall -O3 -pthread $< NN/neuralnet.o -o $@
 
 review: review.cpp Engine/engine.h

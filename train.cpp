@@ -5,8 +5,8 @@
 #include "NN/neuralnet.h"
 
 int main (int argc, char** argv) {
-  if (argc < 6) {
-    cout << "Usage: train agentfile num_epochs alpha0 decay_ratio gamelog [gamelog ...]";
+  if (argc < 4) {
+    cout << "Usage: train agentfile num_epochs gamelog [gamelog ...]\n";
     return 0;
   }
 
@@ -14,9 +14,21 @@ int main (int argc, char** argv) {
   vector<float*> gamestates;
   vector<float*> outcomes;
   char* agentfile = argv[1];
+  float alpha;
+  float decay_ratio;
+  float C;
+  float mutate;
+  char NNfile[256];
+  ifstream Afile(agentfile);
+  if (Afile.is_open()) {
+    Afile >> alpha;
+    Afile >> decay_ratio;
+    Afile >> C;
+    Afile >> mutate;
+    Afile >> NNfile;
+  }
+
   int num_epochs = atoi(argv[2]);
-  float alpha0 = atof(argv[3]);
-  float decay_ratio = atof(argv[4]);
   for (int i=5; i < argc; ++i) {
     char* datafile = argv[i];
     ifstream data(datafile);
@@ -109,11 +121,11 @@ int main (int argc, char** argv) {
   }
 
   // instantiate neuralnet from agentfile
-  Neuralnet N(agentfile);
+  Neuralnet N(NNfile);
   // train agent on data vectors
-  N.train(gamestates, outcomes, num_epochs, alpha0, alpha0*decay_ratio);
+  N.train(gamestates, outcomes, num_epochs, alpha, alpha*decay_ratio);
   // export trained agent to file
-  N.save(agentfile);
+  N.save(NNfile);
 
   // clean up
   for (float* BS_array : gamestates)
