@@ -128,21 +128,80 @@ class MonteCarloTree {
     }
 
     float rollout(BoardState BS) {
-
-      BoardState S = BS;
-      vector<Action> A_list;
-      while (E.getLegalMoves(&A_list, S) > 0) { // && BS.winner == -1) {
-        int R = rand() % A_list.size();
-        S = E.advance(S, A_list[R]);
+      // transcribe boardstate to NN input array and evaluate
+      float BS_array[12*64+5] = {0.0};
+      float result[2];
+      for (int i=0; i < 8; ++i) {
+        for (int j=0; j < 8; ++j) {
+          if (BS.board[i][j] != blank) {
+            int l;
+            switch (BS.board[i][j]) {
+              case w_pawn:
+                l = 0;
+                break;
+              case w_bishop:
+                l = 1;
+                break;
+              case w_knight:
+                l = 2;
+                break;
+              case w_rook:
+                l = 3;
+                break;
+              case w_queen:
+                l = 4;
+                break;
+              case w_king:
+                l = 5;
+                break;
+              case b_pawn:
+                l = 6;
+                break;
+              case b_bishop:
+                l = 7;
+                break;
+              case b_knight:
+                l = 8;
+                break;
+              case b_rook:
+                l = 9;
+                break;
+              case b_queen:
+                l = 10;
+                break;
+              case b_king:
+                l = 11;
+                break;
+              default:
+                l = 0; //shouldn't happen but just in case
+            }
+            BS_array[64*l + 8*i + j] = 1.0;
+          }
+        }
       }
-      if (S.winner == -1) // || S.winner == 0.5)
-        return 0.5;
-      return S.winner;
+      BS_array[12*64 + 0] = -1.0 + 2.0*(BS.turn%2);
+      BS_array[12*64 + 1] = BS.w_castle_kingside?1.0:0.0;
+      BS_array[12*64 + 2] = BS.w_castle_queenside?1.0:0.0;
+      BS_array[12*64 + 3] = BS.b_castle_kingside?1.0:0.0;
+      BS_array[12*64 + 4] = BS.b_castle_queenside?1.0:0.0;
+
+      N->eval((float*)&BS_array, (float*)&result);
+      return result[0] / (result[0]+result[1]);
+
+      //BoardState S = BS;
+      //vector<Action> A_list;
+      //while (E.getLegalMoves(&A_list, S) > 0) { // && BS.winner == -1) {
+      //  int R = rand() % A_list.size();
+      //  S = E.advance(S, A_list[R]);
+      //}
+      //if (S.winner == -1) // || S.winner == 0.5)
+      //  return 0.5;
+      //return S.winner;
     }
 
     void Run(float* wins, int* visits, Action* A, bool* stop) {
-      //int threadCount = thread::hardware_concurrency();
-      int threadCount = 1;
+      int threadCount = min(6,thread::hardware_concurrency());
+      //int threadCount = 1;
       vector<thread> threads;
       for (int i=0; i < threadCount; ++i) {
         thread th(&MonteCarloTree::run_thread, this, stop);
@@ -211,7 +270,7 @@ class MonteCarloTree {
       if (!node->children.empty())
         node = root->children[0];
       for (Node* N : root->children) {
-        if (N->UCB(1) > node->UCB(1))
+        if (N->visits > node->visits)
           node = N;
       }
       *A = node->action;
