@@ -17,7 +17,7 @@ int main(int argc, char** argv) {
   }
 
   float C;
-  char* NNfile;
+  char NNfile[256];
 
   char* agentfile = argv[1];
   ifstream Afile(agentfile);
