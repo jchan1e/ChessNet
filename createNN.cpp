@@ -1,6 +1,3 @@
-// Only creates and initializes the neuralnetwork file.
-// Use other scripts to create the .agent file
-
 #include <iostream>
 #include <fstream>
 #include "NN/neuralnet.h"
@@ -23,7 +20,7 @@ int main(int argc, char** argv) {
   Neuralnet N(&S);
   N.save(argv[1]);
 
-  delete sizes;
+  //delete sizes;
 
   return 0;
 }
