@@ -100,7 +100,7 @@ int main (int argc, char** argv) {
 
         float* W = new float[2];
         W[0] = winner;
-        W[2] = 1.0-winner;
+        W[1] = 1.0-winner;
 
         gamestates.push_back(BS_array);
         outcomes.push_back(W);
@@ -113,6 +113,7 @@ int main (int argc, char** argv) {
   // train agent on data vectors
   N.train(gamestates, outcomes, num_epochs, alpha0, alpha0*decay_ratio);
   // export trained agent to file
+  N.save(agentfile);
 
   // clean up
   for (float* BS_array : gamestates)
