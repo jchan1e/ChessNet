@@ -33,7 +33,11 @@ int main (int argc, char** argv) {
     char* datafile = argv[i];
     ifstream data(datafile);
 
-    if (data.is_open()) {
+    if (!data.is_open()) {
+      cerr << "could not open gamelog " << i-5 << endl;
+      return 1;
+    }
+    else {
       float winner;
       data >> winner;
       while (!data.eof()) {
