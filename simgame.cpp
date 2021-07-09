@@ -17,15 +17,16 @@ int main(int argc, char** argv) {
   char* agentfile2 = argv[2];
   char* logfile = argv[3];
 
-  float C1, C2;
+  float C1, C2, toss;
   char Nfile1[256];
   char Nfile2[256];
 
   ifstream Afile1(agentfile1);
   if (Afile1.is_open()) {
-    Afile1 >> C1; // toss training alpha
-    Afile1 >> C1; // toss training alpha decay ratio
+    Afile1 >> toss; // toss training alpha
+    Afile1 >> toss; // toss training alpha decay ratio
     Afile1 >> C1; // get montecarlo bias parameter
+    Afile1 >> toss; // toss mutation chance
     Afile1 >> Nfile1;
     Afile1.close();
   }
@@ -36,9 +37,10 @@ int main(int argc, char** argv) {
 
   ifstream Afile2(agentfile2);
   if (Afile2.is_open()) {
-    Afile2 >> C2; // toss training alpha
-    Afile2 >> C2; // toss training alpha decay ratio
+    Afile2 >> toss; // toss training alpha
+    Afile2 >> toss; // toss training alpha decay ratio
     Afile2 >> C2; // get montecarlo bias parameter
+    Afile2 >> toss; // toss mutation chance
     Afile2 >> Nfile2;
     Afile2.close();
   }
@@ -64,14 +66,14 @@ int main(int argc, char** argv) {
       usleep(n*1000000);
     stop = true;
     MCTthread1.join();
-    cout << char('A'+A.i1) << 1+A.j1 << " " << char('A'+A.i2) << 1+A.j2 << endl;
-    cout << 100*wins/visits << "\% chance of White victory\n";
-    cout << "node got " << visits << " of " << M.root->visits << " simulations run\n";
+    //cout << char('A'+A.i1) << 1+A.j1 << " " << char('A'+A.i2) << 1+A.j2 << endl;
+    //cout << 100*wins/visits << "\% chance of White victory\n";
+    //cout << "node got " << visits << " of " << M.root->visits << " simulations run\n";
     // Make the MCT's suggested move
     M.advance(A);
     N.advance(A);
 
-    M.E.printBoard();
+    //M.E.printBoard();
     // Check if game has ended
     if (M.root->endstate || M.root->state.winner != -1) {
       break;
@@ -85,14 +87,14 @@ int main(int argc, char** argv) {
       usleep(n*1000000);
     stop = true;
     MCTthread2.join();
-    cout << char('A'+A.i1) << 1+A.j1 << " " << char('A'+A.i2) << 1+A.j2 << endl;
-    cout << 100*wins/visits << "\% chance of Black victory\n";
-    cout << "node got " << visits << " of " << N.root->visits << " simulations run\n";
+    //cout << char('A'+A.i1) << 1+A.j1 << " " << char('A'+A.i2) << 1+A.j2 << endl;
+    //cout << 100*wins/visits << "\% chance of Black victory\n";
+    //cout << "node got " << visits << " of " << N.root->visits << " simulations run\n";
     // Make the MCT's suggested move
     M.advance(A);
     N.advance(A);
 
-    N.E.printBoard();
+    //N.E.printBoard();
     // Check if game has ended
     if (N.root->endstate || N.root->state.winner != -1) {
       break;
@@ -116,7 +118,7 @@ int main(int argc, char** argv) {
   int i = 0;
   for (Action B : Hist) {
     ++i;
-    cout << i << "\t" << char('A'+B.i1) << B.j1+1 << " " << char('A'+B.i2) << B.j2+1 << endl;
+    //cout << i << "\t" << char('A'+B.i1) << B.j1+1 << " " << char('A'+B.i2) << B.j2+1 << endl;
     outfile << B.i1 << " " << B.j1 << " " << B.i2 << " " << B.j2 << endl;
   }
 

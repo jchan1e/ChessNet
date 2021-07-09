@@ -200,8 +200,8 @@ class MonteCarloTree {
     }
 
     void Run(float* wins, int* visits, Action* A, bool* stop) {
-      int threadCount = min(6,thread::hardware_concurrency());
-      //int threadCount = 1;
+      //int threadCount = min(6u,thread::hardware_concurrency());
+      int threadCount = 2;
       vector<thread> threads;
       for (int i=0; i < threadCount; ++i) {
         thread th(&MonteCarloTree::run_thread, this, stop);

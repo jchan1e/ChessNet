@@ -1,12 +1,13 @@
 
 #include <iostream>
 #include <fstream>
+#include <algorithm>
 #include "Engine/engine.h"
 #include "NN/neuralnet.h"
 
 int main (int argc, char** argv) {
-  if (argc < 4) {
-    cout << "Usage: train agentfile num_epochs gamelog [gamelog ...]\n";
+  if (argc < 3) {
+    cout << "Usage: train agentfile gamelog [gamelog ...]\n";
     return 0;
   }
 
@@ -28,7 +29,8 @@ int main (int argc, char** argv) {
     Afile >> NNfile;
   }
 
-  int num_epochs = atoi(argv[2]);
+  //int num_epochs = atoi(argv[2]);
+  int num_epochs = 100;
   for (int i=5; i < argc; ++i) {
     char* datafile = argv[i];
     ifstream data(datafile);
@@ -120,10 +122,20 @@ int main (int argc, char** argv) {
     }
   }
 
+  // set aside validation set
+  random_shuffle(gamestates.begin(), gamestates.end());
+  random_shuffle(outcomes.begin(), outcomes.end());
+  vector<float*> X_train = vector<float*>(gamestates.begin(), gamestates.end() - (0.2*gamestates.size()));
+  vector<float*> y_train = vector<float*>(outcomes.begin(), outcomes.end() - (0.2*outcomes.size()));
+  vector<float*> X_valid = vector<float*>(gamestates.end() - (0.2*gamestates.size()), gamestates.end());
+  vector<float*> y_valid = vector<float*>(outcomes.end() - (0.2*outcomes.size()), outcomes.end());
+
   // instantiate neuralnet from agentfile
   Neuralnet N(NNfile);
   // train agent on data vectors
-  N.train(gamestates, outcomes, num_epochs, alpha, alpha*decay_ratio);
+  N.train(X_train, y_train, X_valid, y_valid, num_epochs, alpha, alpha*decay_ratio);
+  //N.train(gamestates, outcomes, num_epochs, alpha, alpha*decay_ratio);
+  //N.train(gamestates, outcomes, alpha, alpha*decay_ratio);
   // export trained agent to file
   N.save(NNfile);
 

@@ -9,14 +9,16 @@ int main(int argc, char** argv) {
   }
 
   int num_layers = argc;
-  int* sizes = new int[num_layers];
-  sizes[0] = 12*64+5;
-  sizes[num_layers-1] = 2;
+  shape S;
+  S.n = num_layers;
+  S.sizes[0] = 12*64+5;
+  S.sizes[num_layers-1] = 2;
   for (int i=1; i < num_layers-1; ++i) {
-    sizes[i] = atoi(argv[i+1]);
+    S.sizes[i] = atoi(argv[i+1]);
   }
+  S.sigm = false;
+  S.lam = 0.000001;
 
-  shape S = {num_layers, sizes};
   Neuralnet N(&S);
   N.save(argv[1]);
 
