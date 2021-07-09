@@ -16,36 +16,40 @@ def mutateLayers(L, mutate, rate):
     # <rate> chance per layer to add/remove neurons
     for num in L:
         if random.random() < mutate:
-            if randrange(2) == 0:
+            if random.randrange(2) == 0:
                 num = num+1 if num <= 5 else int(num * rate)
             else:
                 num = max(1, int(num / rate))
     # <rate> chance to add/remove a layer at a random place in the stack
     if random.random() < mutate:
-        if randrange(2) == 0:
+        if random.randrange(2) == 0:
             if len(L) > 1:
-                del L[randrange[len(L)]]
+                del L[random.randrange(len(L))]
         else:
-            slot = randrange(len(L) + 1)
+            slot = random.randrange(len(L) + 1)
             if slot == 0:
                 L.insert(slot, L[0])
             elif slot == len(L):
                 L.append(L[-1])
             else:
-                avg = (L[slot] + L[slot+1]) / 2
+                avg = int((L[slot-1] + L[slot]) / 2)
                 L.insert(slot, avg)
     return L
 
-popName = "Population"
 generation = 0
 turn_time = 2
 
 def simgame(agent1, agent2):
     print("Simulating {} vs {}".format(agent1, agent2))
     #if int(agent1) < int(agent2):
-    os.system("./simgame Agents/{0}.agent Agents/{1}.agent gamelogs/gen{3}/{0}.{1}.game {2}".format(agent1, agent2, turn_time, generation))
+    if not os.path.isfile("gamelogs/gen{2}/{0}.{1}.game".format(agent1, agent2, generation)):
+        os.system("./simgame Agents/{0}.agent Agents/{1}.agent gamelogs/gen{3}/{0}.{1}.game {2}".format(agent1, agent2, turn_time, generation))
     winner = float(os.popen("head -1 gamelogs/gen{2}/{0}.{1}.game".format(agent1, agent2, generation)).read().strip())
     return (agent1, agent2, winner)
+
+def train(target):
+    print("Training {}".format(target))
+    os.system("./train Agents/" + target + ".agent gamelogs/gen*/*.game > Agents/" + target + ".log")
 
 #pool_size = 1
 #pool_size = os.cpu_count()/2
@@ -100,23 +104,25 @@ while generation >= 0:
         os.system("mv gamelogs/gen{} gamelogs/archive/".format(generation-3))
 
     # cull lowest performing 50% of agents
-    print("Culling agents")
+    print("Culling agents:")
     num_agents = len(agents)
-    survivors = agents.copy()
-    for i in range(num_agents/2):
+    removed = []
+    for i in range(int(num_agents/2)):
         lowest = float('inf')
         lagent = ""
         for agent in agents:
-            if wins[agent] < lowest:
+            if wins[agent] < lowest and agent not in removed:
                 lagent = agent
                 lowest = wins[agent]
-        os.system("mv Agents/{}.* archive/".format(agent))
-        del survivors[lagent]
+        os.system("mv Agents/{}.* Agents/archive/".format(lagent))
+        removed.append(lagent)
+    print(removed)
+    survivors = [a for a in agents if a not in removed]
 
     # generate new agents
     print("Generating new agents")
     targets = []
-    for i in range(num_agents/2):
+    for i in range(int(num_agents/2)):
         #* Method 1 - 2 parent genetics
         #  Method 2 - whole population as parents
         #  Method 3 - parthenogenesis
@@ -124,14 +130,16 @@ while generation >= 0:
 
         # pick two random agents
         selection = random.sample(survivors, 2)
+        parentstrings = []
         parents = []
-        with open("Agents/{}.agent".format(selection[0]), r) as f:
-            parents.append(f.readlines())
-        with open("Agents/{}.agent".format(selection[1]), r) as f:
-            parents.append(f.readlines())
-        for p in parents:
+        with open("Agents/{}.agent".format(selection[0]), "r") as f:
+            parentstrings.append(f.readlines())
+        with open("Agents/{}.agent".format(selection[1]), "r") as f:
+            parentstrings.append(f.readlines())
+        for p in parentstrings:
             p = [s.strip() for s in p]
-            p[5] = [int(s) for s in p[5].split()]
+            p[5] = [int(s) for s in p[5].split(" ")]
+            parents.append(p)
 
         # fill in values from each
         alpha  = float(random.choice(parents)[0])
@@ -144,28 +152,28 @@ while generation >= 0:
         rate = 2 ** (0.0625)
         layers = mutateLayers(layers, mutate, rate**4)
         if random.random() < mutate:
-            if randrange(2) == 0:
+            if random.randrange(2) == 0:
                 alpha /= rate
             else:
                 alpha *= rate
         if random.random() < mutate:
-            if randrange(2) == 0:
+            if random.randrange(2) == 0:
                 decay /= rate
             else:
                 decay *= rate
         if random.random() < mutate:
-            if randrange(2) == 0:
+            if random.randrange(2) == 0:
                 bias = (bias-1)/rate + 1
             else:
                 bias = (bias-1)*rate + 1
         if random.random() < mutate:
-            if randrange(2) == 0:
+            if random.randrange(2) == 0:
                 mutate /= rate
             else:
                 mutate *= rate
 
-        args = " ".join([str(arg) for arg in [alpha, decay, bias, mutate]]) + " ".join([str(layer) for layer in layers])
-        cmd = "./createNN Agents/" + str(next_agent_num).zfill(4) + " " + args
+        args = " ".join([str(arg) for arg in [alpha, decay, bias, mutate]]) + " " + " ".join([str(layer) for layer in layers])
+        cmd = "./createAgent.sh Agents/" + str(next_agent_num).zfill(4) + " " + args
         os.system(cmd)
 
         # train
@@ -177,8 +185,7 @@ while generation >= 0:
     #bulk train (parallelize me)
     #for target in targets:
     #    os.system("./train Agents/" + target + ".agent > Agents/" + target + ".log")
-    def train(target):
-        print("Training {}".format(target))
-        os.system("./train Agents/" + target + ".agent gamelogs/gen*/*.game > Agents/" + target + ".log")
     pool2.map(train, targets)
+
+    generation += 1
 
