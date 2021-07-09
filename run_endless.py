@@ -38,13 +38,13 @@ def mutateLayers(L, mutate, rate):
 
 popName = "Population"
 generation = 0
-turn_time = 5
+turn_time = 2
 
 def simgame(agent1, agent2):
     print("Simulating {} vs {}".format(agent1, agent2))
     #if int(agent1) < int(agent2):
     os.system("./simgame Agents/{0}.agent Agents/{1}.agent gamelogs/gen{3}/{0}.{1}.game {2}".format(agent1, agent2, turn_time, generation))
-    winner = int(os.popen("head -1 gamelogs/gen{2}/{0}.{1}.game".format(agent1, agent2, generation)).read())
+    winner = float(os.popen("head -1 gamelogs/gen{2}/{0}.{1}.game".format(agent1, agent2, generation)).read().strip())
     return (agent1, agent2, winner)
 
 #pool_size = 1
@@ -67,7 +67,7 @@ while generation >= 0:
     #   save outputs to gamelogs folder
     print("Gathering agents")
     agents = [a[:-6] for a in filter(lambda s: ".agent" in s, os.listdir("Agents/"))]
-    wins = {agent:0 for agent in agents}
+    wins = {agent:0.0 for agent in agents}
     os.system("mkdir gamelogs/gen{}".format(generation))
     # (Parallelize me)
     #for agent1 in agents:
@@ -84,8 +84,8 @@ while generation >= 0:
     args = list(itertools.product(agents, agents))
 
     results = pool.starmap(simgame, args)
-    print(results)
-    exit(0)
+    #print(results)
+    #exit(0)
     #results = []
     #for arg1, arg2 in args:
     #    results.append(simgame(arg1, arg2))
