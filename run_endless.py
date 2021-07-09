@@ -12,8 +12,9 @@ def combineLayers(L1, L2): # L1 and L2 are lists of ints
             L.append(source[i])
     return L
 
-def mutateLayers(L, mutate, rate):
+def mutateLayers(Layers, mutate, rate):
     # <rate> chance per layer to add/remove neurons
+    L = Layers.copy()
     for num in L:
         if random.random() < mutate:
             if random.randrange(2) == 0:
@@ -43,8 +44,17 @@ def simgame(agent1, agent2):
     print("Simulating {} vs {}".format(agent1, agent2))
     #if int(agent1) < int(agent2):
     if not os.path.isfile("gamelogs/gen{2}/{0}.{1}.game".format(agent1, agent2, generation)):
-        os.system("./simgame Agents/{0}.agent Agents/{1}.agent gamelogs/gen{3}/{0}.{1}.game {2}".format(agent1, agent2, turn_time, generation))
-    winner = float(os.popen("head -1 gamelogs/gen{2}/{0}.{1}.game".format(agent1, agent2, generation)).read().strip())
+        if not os.path.isfile("gamelogs/gen{2}/{1}.{0}.game".format(agent1, agent2, generation)):
+            if random.randrange(2) == 0:
+                os.system("./simgame Agents/{0}.agent Agents/{1}.agent gamelogs/gen{3}/{0}.{1}.game {2}".format(agent1, agent2, turn_time, generation))
+            else:
+                os.system("./simgame Agents/{0}.agent Agents/{1}.agent gamelogs/gen{3}/{0}.{1}.game {2}".format(agent2, agent1, turn_time, generation))
+
+    winner = 0
+    if os.path.isfile("gamelogs/gen{2}/{0}.{1}.game".format(agent1, agent2, generation)):
+        winner = float(os.popen("head -1 gamelogs/gen{2}/{0}.{1}.game".format(agent1, agent2, generation)).read().strip())
+    else:
+        winner = float(os.popen("head -1 gamelogs/gen{2}/{0}.{1}.game".format(agent2, agent1, generation)).read().strip())
     return (agent1, agent2, winner)
 
 def train(target):
@@ -53,7 +63,7 @@ def train(target):
 
 #pool_size = 1
 #pool_size = os.cpu_count()/2
-pool_size = int(max((os.cpu_count()-4)/2, 2))
+pool_size = int(max((os.cpu_count()-2)/2, 2))
 
 agent_nums = [int(os.path.split(a[:-6])[1]) for a in filter(lambda s: ".agent" in s, os.listdir("Agents/") + os.listdir("Agents/archive/"))]
 next_agent_num = max(agent_nums) + 1
@@ -85,7 +95,8 @@ while generation >= 0:
     #        l.release()
 
     print("Simulating games")
-    args = list(itertools.product(agents, agents))
+    args = list(itertools.combinations(agents, 2))
+    random.shuffle(args)
 
     results = pool.starmap(simgame, args)
     #print(results)
@@ -95,8 +106,8 @@ while generation >= 0:
     #    results.append(simgame(arg1, arg2))
 
     for (agent1, agent2, winner) in results:
-        wins[agent1] += winner
-        wins[agent2] += 1-winner
+        wins[agent1] += winner - 0.5
+        wins[agent2] += 0.5 - winner
 
     # rotate out old logs
     if generation >= 3:
