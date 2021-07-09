@@ -60,6 +60,7 @@ if len(sys.argv) > 2:
     generation = int(sys.argv[2])
 
 pool = multiprocessing.Pool(pool_size)
+pool2 = multiprocessing.Pool(pool_size*2)
 
 while generation >= 0:
     # simulate games between all member of current population
@@ -179,5 +180,5 @@ while generation >= 0:
     def train(target):
         print("Training {}".format(target))
         os.system("./train Agents/" + target + ".agent gamelogs/gen*/*.game > Agents/" + target + ".log")
-    pool.map(train, targets)
+    pool2.map(train, targets)
 
