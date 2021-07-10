@@ -40,7 +40,7 @@ def mutateLayers(Layers, mutate, rate):
 generation = 0
 turn_time = 2
 
-def simgame(agent1, agent2):
+def simgame(agent1, agent2, generation):
     print("Simulating {} vs {}".format(agent1, agent2))
     #if int(agent1) < int(agent2):
     if not os.path.isfile("gamelogs/gen{2}/{0}.{1}.game".format(agent1, agent2, generation)):
@@ -96,6 +96,7 @@ while generation >= 0:
 
     print("Simulating games")
     args = list(itertools.combinations(agents, 2))
+    args = [(tup[0], tup[1], generation) for tup in args]
     random.shuffle(args)
 
     results = pool.starmap(simgame, args)
