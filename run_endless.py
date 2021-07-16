@@ -14,13 +14,15 @@ def combineLayers(L1, L2): # L1 and L2 are lists of ints
 
 def mutateLayers(Layers, mutate, rate):
     # <rate> chance per layer to add/remove neurons
-    L = Layers.copy()
-    for num in L:
+    L = Layers[:]
+    #for num in L:
+    for i in range(len(L)):
+        num = L[i]
         if random.random() < mutate:
             if random.randrange(2) == 0:
-                num = num+1 if num <= 5 else int(num * rate)
+                L[i] = num+1 if num <= 5 else int(num * rate)
             else:
-                num = max(1, int(num / rate))
+                L[i] = max(1, int(num / rate))
     # <rate> chance to add/remove a layer at a random place in the stack
     if random.random() < mutate:
         if random.randrange(2) == 0:
@@ -39,6 +41,11 @@ def mutateLayers(Layers, mutate, rate):
 
 generation = 0
 turn_time = 2
+
+if len(sys.argv) > 1:
+    turn_time = int(sys.argv[1])
+if len(sys.argv) > 2:
+    generation = int(sys.argv[2])
 
 def simgame(agent1, agent2, generation):
     print("Simulating {} vs {}".format(agent1, agent2))
@@ -68,15 +75,11 @@ pool_size = int(max((os.cpu_count()-2)/2, 2))
 agent_nums = [int(os.path.split(a[:-6])[1]) for a in filter(lambda s: ".agent" in s, os.listdir("Agents/") + os.listdir("Agents/archive/"))]
 next_agent_num = max(agent_nums) + 1
 
-if len(sys.argv) > 1:
-    turn_time = int(sys.argv[1])
-if len(sys.argv) > 2:
-    generation = int(sys.argv[2])
-
 pool = multiprocessing.Pool(pool_size)
 pool2 = multiprocessing.Pool(pool_size*2)
 
 while generation >= 0:
+    print("Generation: ", generation)
     # simulate games between all member of current population
     #   save outputs to gamelogs folder
     print("Gathering agents")
