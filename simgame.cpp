@@ -92,8 +92,8 @@ int main(int argc, char** argv) {
     if (N.E.getBoardState().turn == 2)
       usleep(n*1000000);
     stop = true;
-    MCTthread2.join();
-    MCTthread2.join();
+    MCTthread3.join();
+    MCTthread4.join();
     //cout << char('A'+A.i1) << 1+A.j1 << " " << char('A'+A.i2) << 1+A.j2 << endl;
     //cout << 100*wins/visits << "\% chance of Black victory\n";
     //cout << "node got " << visits << " of " << N.root->visits << " simulations run\n";
