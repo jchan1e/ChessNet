@@ -16,7 +16,7 @@ int main(int argc, char** argv) {
   for (int i=1; i < num_layers-1; ++i) {
     S.sizes[i] = atoi(argv[i+1]);
   }
-  S.sigm = false;
+  S.sigm = true;
   S.lam = 0.000001;
 
   Neuralnet N(&S);

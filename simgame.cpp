@@ -52,26 +52,31 @@ int main(int argc, char** argv) {
   MonteCarloTree M(true, C1, Nfile1);
   MonteCarloTree N(false, C2, Nfile2);
   bool stop = false;
-  Action A;
-  int visits;
-  float wins;
+  Action A_N;
+  Action A_M;
+  int visits_M;
+  int visits_N;
+  float wins_M;
+  float wins_N;
   bool quit = false;
 
   while (!quit) {
     // spawn computation thread and run for n seconds
     stop = false;
-    thread MCTthread1(&MonteCarloTree::Run, &M, &wins, &visits, &A, &stop);
+    thread MCTthread1(&MonteCarloTree::Run, &M, &wins_M, &visits_M, &A_M, &stop);
+    thread MCTthread2(&MonteCarloTree::Run, &N, &wins_N, &visits_N, &A_N, &stop);
     usleep(n*1000000);
     if (M.E.getBoardState().turn == 1)
       usleep(n*1000000);
     stop = true;
     MCTthread1.join();
+    MCTthread2.join();
     //cout << char('A'+A.i1) << 1+A.j1 << " " << char('A'+A.i2) << 1+A.j2 << endl;
     //cout << 100*wins/visits << "\% chance of White victory\n";
     //cout << "node got " << visits << " of " << M.root->visits << " simulations run\n";
     // Make the MCT's suggested move
-    M.advance(A);
-    N.advance(A);
+    M.advance(A_M);
+    N.advance(A_M);
 
     //M.E.printBoard();
     // Check if game has ended
@@ -81,18 +86,20 @@ int main(int argc, char** argv) {
 
     // spawn computation thread and run for n seconds
     stop = false;
-    thread MCTthread2(&MonteCarloTree::Run, &N, &wins, &visits, &A, &stop);
+    thread MCTthread3(&MonteCarloTree::Run, &N, &wins_M, &visits_M, &A_M, &stop);
+    thread MCTthread4(&MonteCarloTree::Run, &N, &wins_N, &visits_N, &A_N, &stop);
     usleep(n*1000000);
     if (N.E.getBoardState().turn == 2)
       usleep(n*1000000);
     stop = true;
     MCTthread2.join();
+    MCTthread2.join();
     //cout << char('A'+A.i1) << 1+A.j1 << " " << char('A'+A.i2) << 1+A.j2 << endl;
     //cout << 100*wins/visits << "\% chance of Black victory\n";
     //cout << "node got " << visits << " of " << N.root->visits << " simulations run\n";
     // Make the MCT's suggested move
-    M.advance(A);
-    N.advance(A);
+    M.advance(A_N);
+    N.advance(A_N);
 
     //N.E.printBoard();
     // Check if game has ended
