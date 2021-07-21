@@ -101,8 +101,9 @@ while generation >= 0:
     args = list(itertools.combinations(agents, 2))
     args = [(tup[0], tup[1], generation) for tup in args]
     random.shuffle(args)
+    args = args[:int(len(args)/2)]
 
-    results = pool.starmap(simgame, args)
+    results = pool.starmap(simgame, args, chunksize=1)
     #print(results)
     #exit(0)
     #results = []
@@ -200,7 +201,7 @@ while generation >= 0:
     #bulk train (parallelize me)
     #for target in targets:
     #    os.system("./train Agents/" + target + ".agent > Agents/" + target + ".log")
-    pool2.map(train, targets)
+    pool2.map(train, targets, chunksize=1)
 
     generation += 1
 
