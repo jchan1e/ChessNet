@@ -24,8 +24,8 @@ def mutateLayers(Layers, mutate, rate):
                 L[i] = num+1 if num <= 5 else int(num * rate)
             else:
                 L[i] = max(1, int(num / rate))
-    # <rate> chance to add/remove a layer at a random place in the stack
-    if random.random() < mutate:
+    # <ratei^2> chance to add/remove a layer at a random place in the stack
+    if random.random() < mutate*mutate:
         if random.randrange(2) == 0:
             if len(L) > 1:
                 del L[random.randrange(len(L))]
