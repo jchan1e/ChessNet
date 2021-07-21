@@ -60,20 +60,39 @@ int main(int argc, char** argv) {
   float wins_N;
   bool quit = false;
 
+  //cout << "Beginning Simulation\n";
   while (!quit) {
     // spawn computation thread and run for n seconds
     stop = false;
     thread MCTthread1(&MonteCarloTree::Run, &M, &wins_M, &visits_M, &A_M, &stop);
     thread MCTthread2(&MonteCarloTree::Run, &N, &wins_N, &visits_N, &A_N, &stop);
-    usleep(n*1000000);
-    if (M.E.getBoardState().turn == 1)
-      usleep(n*1000000);
+    int iter = 0;
+    while (!stop && iter < n) {
+      usleep(1000000);
+      M.root->mtx.lock();
+      //cout << "Total:\t" << M.root->visits << endl;
+      if (M.root->visits >= 100000){
+        //cout << "Nodes:\t";
+        for (Node* n : M.root->children) {
+          //cout << n->visits << "\t";
+          if ((float)n->visits/M.root->visits >= 0.5) {
+            stop = true;
+          }
+        }
+        //cout << endl;
+      }
+      M.root->mtx.unlock();
+      iter++;
+    }
+    //usleep(n*1000000);
+    //if (M.E.getBoardState().turn == 1)
+    //  usleep(n*1000000);
     stop = true;
     MCTthread1.join();
     MCTthread2.join();
-    //cout << char('A'+A.i1) << 1+A.j1 << " " << char('A'+A.i2) << 1+A.j2 << endl;
-    //cout << 100*wins/visits << "\% chance of White victory\n";
-    //cout << "node got " << visits << " of " << M.root->visits << " simulations run\n";
+    //cout << char('A'+A_M.i1) << 1+A_M.j1 << " " << char('A'+A_M.i2) << 1+A_M.j2 << endl;
+    //cout << 100*wins_M/visits_M << "\% chance of White victory\n";
+    //cout << "node got " << visits_M << " of " << M.root->visits << " simulations run\n";
     // Make the MCT's suggested move
     M.advance(A_M);
     N.advance(A_M);
@@ -88,15 +107,33 @@ int main(int argc, char** argv) {
     stop = false;
     thread MCTthread3(&MonteCarloTree::Run, &N, &wins_M, &visits_M, &A_M, &stop);
     thread MCTthread4(&MonteCarloTree::Run, &N, &wins_N, &visits_N, &A_N, &stop);
-    usleep(n*1000000);
-    if (N.E.getBoardState().turn == 2)
-      usleep(n*1000000);
+    iter = 0;
+    while (!stop && iter < n) {
+      usleep(1000000);
+      N.root->mtx.lock();
+      //cout << "Total:\t" << N.root->visits << endl;
+      if (N.root->visits >= 100000){
+        //cout << "Nodes:\t";
+        for (Node* n : N.root->children) {
+          //cout << n->visits << "\t";
+          if ((float)n->visits/N.root->visits >= 0.5) {
+            stop = true;
+          }
+        }
+        //cout << endl;
+      }
+      N.root->mtx.unlock();
+      iter++;
+    }
+    //usleep(n*1000000);
+    //if (N.E.getBoardState().turn == 2)
+    //  usleep(n*1000000);
     stop = true;
     MCTthread3.join();
     MCTthread4.join();
-    //cout << char('A'+A.i1) << 1+A.j1 << " " << char('A'+A.i2) << 1+A.j2 << endl;
-    //cout << 100*wins/visits << "\% chance of Black victory\n";
-    //cout << "node got " << visits << " of " << N.root->visits << " simulations run\n";
+    //cout << char('A'+A_N.i1) << 1+A_N.j1 << " " << char('A'+A_N.i2) << 1+A_N.j2 << endl;
+    //cout << 100*wins_N/visits_N << "\% chance of Black victory\n";
+    //cout << "node got " << visits_N << " of " << N.root->visits << " simulations run\n";
     // Make the MCT's suggested move
     M.advance(A_N);
     N.advance(A_N);
