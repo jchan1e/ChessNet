@@ -71,11 +71,11 @@ int main(int argc, char** argv) {
       usleep(1000000);
       M.root->mtx.lock();
       //cout << "Total:\t" << M.root->visits << endl;
-      if (M.root->visits >= 100000){
+      if (M.root->visits >= 10000){
         //cout << "Nodes:\t";
         for (Node* n : M.root->children) {
           //cout << n->visits << "\t";
-          if ((float)n->visits/M.root->visits >= 0.5) {
+          if ((float)n->visits/M.root->visits > 0.5) {
             stop = true;
           }
         }
@@ -112,11 +112,11 @@ int main(int argc, char** argv) {
       usleep(1000000);
       N.root->mtx.lock();
       //cout << "Total:\t" << N.root->visits << endl;
-      if (N.root->visits >= 100000){
+      if (N.root->visits >= 10000){
         //cout << "Nodes:\t";
         for (Node* n : N.root->children) {
           //cout << n->visits << "\t";
-          if ((float)n->visits/N.root->visits >= 0.5) {
+          if ((float)n->visits/N.root->visits > 0.5) {
             stop = true;
           }
         }
