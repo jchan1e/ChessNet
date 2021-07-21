@@ -167,8 +167,8 @@ while generation >= 0:
         layers = combineLayers(parents[0][5], parents[1][5])
 
         # mutate
-        rate = 2 ** (0.0625)
-        layers = mutateLayers(layers, mutate, rate**4)
+        rate = 2 ** (0.125)
+        layers = mutateLayers(layers, mutate, rate**2)
         if random.random() < mutate:
             if random.randrange(2) == 0:
                 alpha /= rate
