@@ -1,5 +1,6 @@
 import os
 import sys
+import math
 import random
 import multiprocessing
 import itertools
@@ -160,7 +161,8 @@ while generation >= 0:
         # fill in values from each
         alpha  = float(random.choice(parents)[0])
         decay  = float(random.choice(parents)[1])
-        bias   = float(random.choice(parents)[2])
+        #bias   = float(random.choice(parents)[2])
+        bias   = math.sqrt(2.0)
         mutate = float(random.choice(parents)[3])
         layers = combineLayers(parents[0][5], parents[1][5])
 
@@ -177,11 +179,11 @@ while generation >= 0:
                 decay /= rate
             else:
                 decay *= rate
-        if random.random() < mutate:
-            if random.randrange(2) == 0:
-                bias = (bias-1)/rate + 1
-            else:
-                bias = (bias-1)*rate + 1
+        #if random.random() < mutate:
+        #    if random.randrange(2) == 0:
+        #        bias = (bias-1)/rate + 1
+        #    else:
+        #        bias = (bias-1)*rate + 1
         if random.random() < mutate:
             if random.randrange(2) == 0:
                 mutate /= rate
