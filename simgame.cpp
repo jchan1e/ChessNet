@@ -97,7 +97,7 @@ int main(int argc, char** argv) {
     M.advance(A_M);
     N.advance(A_M);
 
-    //M.E.printBoard();
+    M.E.printBoard();
     // Check if game has ended
     if (M.root->endstate || M.root->state.winner != -1) {
       break;
@@ -138,7 +138,7 @@ int main(int argc, char** argv) {
     M.advance(A_N);
     N.advance(A_N);
 
-    //N.E.printBoard();
+    N.E.printBoard();
     // Check if game has ended
     if (N.root->endstate || N.root->state.winner != -1) {
       break;

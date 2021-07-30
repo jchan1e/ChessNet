@@ -47,7 +47,7 @@ class Node {
     float UCB(float C) {
       // Upper Confidence Bound
       // Lower C favors exploitation, higher favors exploration
-      mtx.lock();
+      //mtx.lock();
       float explore = C*(sqrt(log(parent->visits)/visits));
       float exploit = 0.0;
       if (visits != 0) {
@@ -56,7 +56,7 @@ class Node {
         else
           exploit = 1.0 - wins/visits;
       }
-      mtx.unlock();
+      //mtx.unlock();
       return exploit + explore;
     }
 
@@ -201,7 +201,7 @@ class MonteCarloTree {
 
     void Run(float* wins, int* visits, Action* A, bool* stop) {
       //int threadCount = min(6u,thread::hardware_concurrency());
-      int threadCount = 1;
+      int threadCount = 2;
       vector<thread> threads;
       for (int i=0; i < threadCount; ++i) {
         thread th(&MonteCarloTree::run_thread, this, stop);

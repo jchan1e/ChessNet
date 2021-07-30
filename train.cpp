@@ -30,7 +30,7 @@ int main (int argc, char** argv) {
   }
 
   //int num_epochs = atoi(argv[2]);
-  int num_epochs = 100;
+  int num_epochs = 40;
   for (int i=5; i < argc; ++i) {
     char* datafile = argv[i];
     ifstream data(datafile);

@@ -54,9 +54,9 @@ def simgame(agent1, agent2, generation):
     if not os.path.isfile("gamelogs/gen{2}/{0}.{1}.game".format(agent1, agent2, generation)):
         if not os.path.isfile("gamelogs/gen{2}/{1}.{0}.game".format(agent1, agent2, generation)):
             if random.randrange(2) == 0:
-                os.system("./simgame Agents/{0}.agent Agents/{1}.agent gamelogs/gen{3}/{0}.{1}.game {2}".format(agent1, agent2, turn_time, generation))
+                os.system("./simgame Agents/{0}.agent Agents/{1}.agent gamelogs/gen{3}/{0}.{1}.game {2} > /dev/null".format(agent1, agent2, turn_time, generation))
             else:
-                os.system("./simgame Agents/{0}.agent Agents/{1}.agent gamelogs/gen{3}/{0}.{1}.game {2}".format(agent2, agent1, turn_time, generation))
+                os.system("./simgame Agents/{0}.agent Agents/{1}.agent gamelogs/gen{3}/{0}.{1}.game {2} > /dev/null".format(agent2, agent1, turn_time, generation))
 
     winner = 0
     if os.path.isfile("gamelogs/gen{2}/{0}.{1}.game".format(agent1, agent2, generation)):
@@ -67,7 +67,7 @@ def simgame(agent1, agent2, generation):
 
 def train(target):
     print("Training {}".format(target))
-    os.system("./train Agents/" + target + ".agent gamelogs/gen*/*.game > Agents/" + target + ".log")
+    os.system("./train Agents/" + target + ".agent gamelogs/gen*/*.game >> Agents/" + target + ".log")
 
 #pool_size = 1
 #pool_size = os.cpu_count()/2
@@ -76,7 +76,7 @@ pool_size = int(max((os.cpu_count()-2)/2, 2))
 agent_nums = [int(os.path.split(a[:-6])[1]) for a in filter(lambda s: ".agent" in s, os.listdir("Agents/") + os.listdir("Agents/archive/"))]
 next_agent_num = max(agent_nums) + 1
 
-pool = multiprocessing.Pool(pool_size)
+pool = multiprocessing.Pool(int(pool_size/2))
 pool2 = multiprocessing.Pool(pool_size*2)
 
 while generation >= 0:
@@ -102,7 +102,7 @@ while generation >= 0:
     args = list(itertools.combinations(agents, 2))
     args = [(tup[0], tup[1], generation) for tup in args]
     random.shuffle(args)
-    args = args[:int(len(args)/2)]
+    #args = args[:int(len(args)/2)]
 
     results = pool.starmap(simgame, args, chunksize=1)
     #print(results)
@@ -116,9 +116,9 @@ while generation >= 0:
         wins[agent2] += 0.5 - winner
 
     # rotate out old logs
-    if generation >= 3:
-        print("Rotating logs from gen{}".format(generation-3))
-        os.system("mv gamelogs/gen{} gamelogs/archive/".format(generation-3))
+    if generation >= 4:
+        print("Rotating logs from gen{}".format(generation-4))
+        os.system("mv gamelogs/gen{} gamelogs/archive/".format(generation-4))
 
     # cull lowest performing 50% of agents
     print("Culling agents:")
@@ -138,7 +138,8 @@ while generation >= 0:
 
     # generate new agents
     print("Generating new agents")
-    targets = []
+    # also update training on the old agents
+    targets = survivors[:]
     for i in range(int(num_agents/2)):
         #* Method 1 - 2 parent genetics
         #  Method 2 - whole population as parents
