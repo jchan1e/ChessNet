@@ -106,23 +106,25 @@ class MonteCarloTree {
       N->mtx.lock();
       if (!N->expanded) {
         N->expanded = true;
-        if (N->parent != NULL && N->parent->parent != NULL && N->parent->parent->parent != NULL &&  N->parent->parent->parent->parent != NULL &&
-            N->state == N->parent->parent->parent->parent->state) {
-          N->endstate = true;
-          N->state.winner = 0.5;
+        //if (N->parent != NULL && N->parent->parent != NULL && N->parent->parent->parent != NULL &&  N->parent->parent->parent->parent != NULL &&
+        //    N->state == N->parent->parent->parent->parent->state) {
+        //  N->endstate = true;
+        //  N->state.winner = 0.5;
+        //}
+        //else {
+        vector<Action> A_list;
+        int moves = E.getLegalMoves(&A_list, N->state);
+        if (moves > 0) {
+          for (int i=0; i < moves; ++i){
+            Node* n = new Node(N, A_list[i], E.advance(N->state, A_list[i]));
+            N->children.push_back(n);
+          }
         }
         else {
-          vector<Action> A_list;
-          int moves = E.getLegalMoves(&A_list, N->state);
-          if (moves > 0) {
-            for (int i=0; i < moves; ++i){
-              Node* n = new Node(N, A_list[i], E.advance(N->state, A_list[i]));
-              N->children.push_back(n);
-            }
-          }
-          else
-            N->endstate = true;
+          N->endstate = true;
+          N->state.winner = -1 * moves;
         }
+        //}
       }
       N->mtx.unlock();
     }
@@ -201,7 +203,7 @@ class MonteCarloTree {
 
     void Run(float* wins, int* visits, Action* A, bool* stop) {
       //int threadCount = min(6u,thread::hardware_concurrency());
-      int threadCount = 2;
+      int threadCount = 1;
       vector<thread> threads;
       for (int i=0; i < threadCount; ++i) {
         thread th(&MonteCarloTree::run_thread, this, stop);
@@ -219,7 +221,6 @@ class MonteCarloTree {
         //traverse the tree by highest UCB until we reach a leaf node
         while (!N->children.empty()) {
           N->mtx.lock();
-          N->visits++;
           int best_i = 0;
           float best_UCB = N->children[0]->UCB(Ce);
           for (unsigned int i=1; i < N->children.size(); ++i) {
@@ -229,6 +230,7 @@ class MonteCarloTree {
               best_UCB = i_ucb;
             }
           }
+          N->visits++;
           N->mtx.unlock();
           N = N->children[best_i];
         }
@@ -239,24 +241,26 @@ class MonteCarloTree {
         //E.printBoard(N->state);
 
         float win;
-        if (N->visits == 1) {
-          // if node is unvisited, run rollout and backpropagate
-          win = rollout(N->state);
-        }
-        else if (N->endstate) {
+        //if (N->visits == 1) {
+        //  // if node is unvisited, run rollout and backpropagate
+        //  win = rollout(N->state);
+        //}
+        //else if (N->endstate) {
+        if (N->endstate) {
           // if endstate, backpropagate score stored in game state
           win = 0.5;
           if (N->state.winner != -1)
             win = N->state.winner;
         }
         else {
-          // otherwise, expand leaf node and pick a child node to rollout
-          expand(N);
-          if (!N->children.empty()) {
-            int r = rand() % N->children.size();
-            N = N->children[r];
-          }
+          // otherwise, rollout and expand leaf node
           win = rollout(N->state);
+          expand(N);
+          //if (!N->children.empty()) {
+          //  int r = rand() % N->children.size();
+          //  N = N->children[r];
+          //}
+          //win = rollout(N->state);
         }
         if (!White)
           win = 1.0 - win;
