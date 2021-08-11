@@ -105,6 +105,98 @@ class Engine {
       return false;
     }
 
+  bool check_check(BoardState BS) {
+    int opponent = -1;
+    if (BS.turn%2 == 1)
+      opponent = 1;
+    int allied = -1*opponent;
+    // search for allied king
+    int Ki = -1;
+    int Kj = -1;
+    for (int i=0; i < 8; ++i) {
+      for (int j=0; j < 8; ++j) {
+        if (BS.board[i][j] == allied*w_king) {
+          Ki = i;
+          Kj = j;
+        }
+      }
+    }
+    // check threatening pawns
+    if (Ki-1 >= 0 && Kj-opponent >= 0 && Kj-opponent < 8 && BS.board[Ki-1][Kj-opponent] == opponent*w_pawn)
+      return true;
+    else if (Ki+1 < 8 && Kj-opponent >= 0 && Kj-opponent < 8 && BS.board[Ki+1][Kj-opponent] == opponent*w_pawn)
+      return true;
+    // check threatening horizontal and vertical tiles
+    for (int i = -1; Ki+i >= 0; --i) {
+      if (BS.board[Ki+i][Kj] == opponent*w_rook || BS.board[Ki+i][Kj] == opponent*w_queen || (i == 1 && BS.board[Ki+i][Kj] == opponent*w_king))
+        return true;
+      else if (BS.board[Ki+i][Kj] != 0)
+        break;
+    }
+    for (int i = 1; Ki+i < 8; ++i) {
+      if (BS.board[Ki+i][Kj] == opponent*w_rook || BS.board[Ki+i][Kj] == opponent*w_queen || (i == 1 && BS.board[Ki+i][Kj] == opponent*w_king))
+        return true;
+      else if (BS.board[Ki+i][Kj] != 0)
+        break;
+    }
+    for (int j = -1; Kj+j >= 0; --j) {
+      if (BS.board[Ki][Kj+j] == opponent*w_rook || BS.board[Ki][Kj+j] == opponent*w_queen || (j == 1 && BS.board[Ki][Kj+j] == opponent*w_king))
+        return true;
+      else if (BS.board[Ki][Kj+j] != 0)
+        break;
+    }
+    for (int j = 1; Kj+j < 8; ++j) {
+      if (BS.board[Ki][Kj+j] == opponent*w_rook || BS.board[Ki][Kj+j] == opponent*w_queen || (j == 1 && BS.board[Ki][Kj+j] == opponent*w_king))
+        return true;
+      else if (BS.board[Ki][Kj+j] != 0)
+        break;
+    }
+    // check threatening diagonal tiles
+    for (int i = 1; Ki-i >= 0 && Kj-i >= 0; ++i) {
+      if (BS.board[Ki-i][Kj-i] == opponent*w_bishop || BS.board[Ki-i][Kj-i] == opponent*w_queen || (i == 1 && BS.board[Ki-i][Kj-i] == opponent*w_king))
+        return true;
+      else if (BS.board[Ki-i][Kj-i] != 0)
+        break;
+    }
+    for (int i = 1; Ki-i >= 0 && Kj+i < 8; ++i) {
+      if (BS.board[Ki-i][Kj+i] == opponent*w_bishop || BS.board[Ki-i][Kj+i] == opponent*w_queen || (i == 1 && BS.board[Ki-i][Kj+i] == opponent*w_king))
+        return true;
+      else if (BS.board[Ki-i][Kj+i] != 0)
+        break;
+    }
+    for (int i = 1; Ki+i < 8 && Kj-i >= 0; ++i) {
+      if (BS.board[Ki+i][Kj-i] == opponent*w_bishop || BS.board[Ki+i][Kj-i] == opponent*w_queen || (i == 1 && BS.board[Ki+i][Kj-i] == opponent*w_king))
+        return true;
+      else if (BS.board[Ki+i][Kj-i] != 0)
+        break;
+    }
+    for (int i = 1; Ki+i < 8 && Kj+i < 8; ++i) {
+      if (BS.board[Ki+i][Kj+i] == opponent*w_bishop || BS.board[Ki+i][Kj+i] == opponent*w_queen || (i == 1 && BS.board[Ki+i][Kj+i] == opponent*w_king))
+        return true;
+      else if (BS.board[Ki+i][Kj+i] != 0)
+        break;
+    }
+    // check for threatening knights
+    if (Ki > 1 && Kj > 0 && BS.board[Ki-2][Kj-1] == opponent*w_knight)
+      return true;
+    if (Ki > 0 && Kj > 1 && BS.board[Ki-1][Kj-2] == opponent*w_knight)
+      return true;
+    if (Ki > 1 && Kj < 7 && BS.board[Ki-2][Kj+1] == opponent*w_knight)
+      return true;
+    if (Ki > 0 && Kj < 6 && BS.board[Ki-1][Kj+2] == opponent*w_knight)
+      return true;
+    if (Ki < 6 && Kj > 0 && BS.board[Ki+2][Kj-1] == opponent*w_knight)
+      return true;
+    if (Ki < 7 && Kj > 1 && BS.board[Ki+1][Kj-2] == opponent*w_knight)
+      return true;
+    if (Ki < 6 && Kj < 7 && BS.board[Ki+2][Kj+1] == opponent*w_knight)
+      return true;
+    if (Ki < 7 && Kj < 6 && BS.board[Ki+1][Kj+2] == opponent*w_knight)
+      return true;
+
+    return false;
+  }
+
   public:
     Engine() {
       state.turn = 1;
@@ -168,23 +260,31 @@ class Engine {
                 case b_pawn:
                   if (j-1 >= 0 && BS.board[i][j-1] == blank) { // straight ahead
                     Action a = {i, j, i, j-1};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   if (j == 6 && BS.board[i][j-1] == blank && BS.board[i][j-2] == blank) { // double first move
                     Action a = {i, j, i, j-2};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   if (j-1 >= 0 && i-1 >= 0 && BS.board[i-1][j-1] > blank) { // blank = 0
                     Action a = {i, j, i-1, j-1};                           // white pieces > 0
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   if (j-1 >= 0 && i+1 < 8 && BS.board[i+1][j-1] > blank) {
                     Action a = {i, j, i+1, j-1};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   break;
 
@@ -194,57 +294,73 @@ class Engine {
                   if (ii < 8 && jj < 8 &&
                       BS.board[ii][jj] >= blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   ii = i+2; jj = j+1;
                   if (ii < 8 && jj < 8 &&
                       BS.board[ii][jj] >= blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   ii = i+2; jj = j+-1;
                   if (ii < 8 && jj >= 0 &&
                       BS.board[ii][jj] >= blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   ii = i+1; jj = j+-2;
                   if (ii < 8 && jj >= 0 &&
                       BS.board[ii][jj] >= blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   ii = i+-1; jj = j+-2;
                   if (ii >= 0 && jj >= 0 &&
                       BS.board[ii][jj] >= blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   ii = i+-2; jj = j+-1;
                   if (ii >= 0 && jj >= 0 &&
                       BS.board[ii][jj] >= blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   ii = i+-2; jj = j+1;
                   if (ii >= 0 && jj < 8 &&
                       BS.board[ii][jj] >= blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   ii = i+-1; jj = j+2;
                   if (ii >= 0 && jj < 8 &&
                       BS.board[ii][jj] >= blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   break;
 
@@ -255,16 +371,20 @@ class Engine {
                   while (ii < 8 && jj < 8 &&
                          BS.board[ii][jj] == blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                     ii++;
                     jj++;
                   }
                   if (ii < 8 && jj < 8 &&
                       BS.board[ii][jj] > blank) { // stopped because of enemy piece
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   // lower right
                   ii = i+1;
@@ -272,16 +392,20 @@ class Engine {
                   while (ii < 8 && 0 <= jj &&
                          BS.board[ii][jj] == blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                     ii++;
                     jj--;
                   }
                   if (ii < 8 && 0 <= jj &&
                       BS.board[ii][jj] > blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   // lower left
                   ii = i-1;
@@ -289,16 +413,20 @@ class Engine {
                   while (0 <= ii && 0 <= jj &&
                          BS.board[ii][jj] == blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                     ii--;
                     jj--;
                   }
                   if (0 <= ii && 0 <= jj &&
                       BS.board[ii][jj] > blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   // upper left
                   ii = i-1;
@@ -306,16 +434,20 @@ class Engine {
                   while (0 <= ii && jj < 8 &&
                          BS.board[ii][jj] == blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                     ii--;
                     jj++;
                   }
                   if (0 <= ii && jj < 8 &&
                       BS.board[ii][jj] > blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   break;
 
@@ -326,15 +458,19 @@ class Engine {
                   while (jj < 8 &&
                          BS.board[ii][jj] == blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                     jj++;
                   }
                   if (jj < 8 &&
                       BS.board[ii][jj] > blank) { // stopped because of enemy piece
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   // right
                   ii = i+1;
@@ -342,15 +478,19 @@ class Engine {
                   while (ii < 8 &&
                          BS.board[ii][jj] == blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                     ii++;
                   }
                   if (ii < 8 &&
                       BS.board[ii][jj] > blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   // down
                   ii = i;
@@ -358,15 +498,19 @@ class Engine {
                   while (0 <= jj &&
                          BS.board[ii][jj] == blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                     jj--;
                   }
                   if (0 <= jj &&
                       BS.board[ii][jj] > blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   // left
                   ii = i-1;
@@ -374,15 +518,19 @@ class Engine {
                   while (0 <= ii &&
                          BS.board[ii][jj] == blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                     ii--;
                   }
                   if (0 <= ii &&
                       BS.board[ii][jj] > blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   break;
                 case b_queen:
@@ -393,16 +541,20 @@ class Engine {
                   while (ii < 8 && jj < 8 &&
                          BS.board[ii][jj] == blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                     ii++;
                     jj++;
                   }
                   if (ii < 8 && jj < 8 &&
                       BS.board[ii][jj] > blank) { // stopped because of enemy piece
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   // lower right
                   ii = i+1;
@@ -410,16 +562,20 @@ class Engine {
                   while (ii < 8 && 0 <= jj &&
                          BS.board[ii][jj] == blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                     ii++;
                     jj--;
                   }
                   if (ii < 8 && 0 <= jj &&
                       BS.board[ii][jj] > blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   // lower left
                   ii = i-1;
@@ -427,16 +583,20 @@ class Engine {
                   while (0 <= ii && 0 <= jj &&
                          BS.board[ii][jj] == blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                     ii--;
                     jj--;
                   }
                   if (0 <= ii && 0 <= jj &&
                       BS.board[ii][jj] > blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   // upper left
                   ii = i-1;
@@ -444,16 +604,20 @@ class Engine {
                   while (0 <= ii && jj < 8 &&
                          BS.board[ii][jj] == blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                     ii--;
                     jj++;
                   }
                   if (0 <= ii && jj < 8 &&
                       BS.board[ii][jj] > blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   // up
                   ii = i;
@@ -461,15 +625,19 @@ class Engine {
                   while (jj < 8 &&
                          BS.board[ii][jj] == blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                     jj++;
                   }
                   if (jj < 8 &&
                       BS.board[ii][jj] > blank) { // stopped because of enemy piece
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   // right
                   ii = i+1;
@@ -477,15 +645,19 @@ class Engine {
                   while (ii < 8 &&
                          BS.board[ii][jj] == blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                     ii++;
                   }
                   if (ii < 8 &&
                       BS.board[ii][jj] > blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   // down
                   ii = i;
@@ -493,15 +665,19 @@ class Engine {
                   while (0 <= jj &&
                          BS.board[ii][jj] == blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                     jj--;
                   }
                   if (0 <= jj &&
                       BS.board[ii][jj] > blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   // left
                   ii = i-1;
@@ -509,15 +685,19 @@ class Engine {
                   while (0 <= ii &&
                          BS.board[ii][jj] == blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                     ii--;
                   }
                   if (0 <= ii &&
                       BS.board[ii][jj] > blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   break;
 
@@ -528,23 +708,29 @@ class Engine {
                           0 <= jj && jj < 8 &&
                           BS.board[ii][jj] >= blank) {
                         Action a = {i, j, ii, jj};
-                        a_list->push_back(a);
-                        moves++;
+                        if (!check_check(advance(BS,a))) {
+                          a_list->push_back(a);
+                          moves++;
+                        }
                       }
                     }
                   }
                   if (BS.b_castle_kingside) {
                     if (BS.board[5][7] == blank && BS.board[6][7] == blank) {
                       Action a = {4, 7, 6, 7};
-                      a_list->push_back(a);
-                      moves++;
+                      if (!check_check(advance(BS,a))) {
+                        a_list->push_back(a);
+                        moves++;
+                      }
                     }
                   }
                   if (BS.b_castle_queenside) {
                     if (BS.board[3][7] == blank && BS.board[2][7] == blank && BS.board[1][7] == blank) {
                       Action a = {4, 7, 2, 7};
-                      a_list->push_back(a);
-                      moves++;
+                      if (!check_check(advance(BS,a))) {
+                        a_list->push_back(a);
+                        moves++;
+                      }
                     }
                   }
                   break;
@@ -559,23 +745,31 @@ class Engine {
                 case w_pawn:
                   if (j+1 < 8 && BS.board[i][j+1] == blank) { // straight ahead
                     Action a = {i, j, i, j+1};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   if (j == 1 && BS.board[i][j+1] == blank && BS.board[i][j+2] == blank) { // double first move
                     Action a = {i, j, i, j+2};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   if (j+1 < 8 && i-1 >= 0 && BS.board[i-1][j+1] < blank) { // blank = 0
                     Action a = {i, j, i-1, j+1};                           // black pieces < 0
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   if (j+1 < 8 && i+1 < 8 && BS.board[i+1][j+1] < blank) {
                     Action a = {i, j, i+1, j+1};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   break;
 
@@ -585,57 +779,73 @@ class Engine {
                   if (ii < 8 && jj < 8 &&
                       BS.board[ii][jj] <= blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   ii = i+2; jj = j+1;
                   if (ii < 8 && jj < 8 &&
                       BS.board[ii][jj] <= blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   ii = i+2; jj = j-1;
                   if (ii < 8 && jj >= 0 &&
                       BS.board[ii][jj] <= blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   ii = i+1; jj = j-2;
                   if (ii < 8 && jj >= 0 &&
                       BS.board[ii][jj] <= blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   ii = i-1; jj = j-2;
                   if (ii >= 0 && jj >= 0 &&
                       BS.board[ii][jj] <= blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   ii = i-2; jj = j-1;
                   if (ii >= 0 && jj >= 0 &&
                       BS.board[ii][jj] <= blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   ii = i-2; jj = j+1;
                   if (ii >= 0 && jj < 8 &&
                       BS.board[ii][jj] <= blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   ii = i-1; jj = j+2;
                   if (ii >= 0 && jj < 8 &&
                       BS.board[ii][jj] <= blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   break;
 
@@ -646,16 +856,20 @@ class Engine {
                   while (ii < 8 && jj < 8 &&
                          BS.board[ii][jj] == blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                     ii++;
                     jj++;
                   }
                   if (ii < 8 && jj < 8 &&
                       BS.board[ii][jj] < blank) { // stopped because of enemy piece
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   // lower right
                   ii = i+1;
@@ -663,16 +877,20 @@ class Engine {
                   while (ii < 8 && 0 <= jj &&
                          BS.board[ii][jj] == blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                     ii++;
                     jj--;
                   }
                   if (ii < 8 && 0 <= jj &&
                       BS.board[ii][jj] < blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   // lower left
                   ii = i-1;
@@ -680,16 +898,20 @@ class Engine {
                   while (0 <= ii && 0 <= jj &&
                          BS.board[ii][jj] == blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                     ii--;
                     jj--;
                   }
                   if (0 <= ii && 0 <= jj &&
                       BS.board[ii][jj] < blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   // upper left
                   ii = i-1;
@@ -697,16 +919,20 @@ class Engine {
                   while (0 <= ii && jj < 8 &&
                          BS.board[ii][jj] == blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                     ii--;
                     jj++;
                   }
                   if (0 <= ii && jj < 8 &&
                       BS.board[ii][jj] < blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   break;
 
@@ -717,15 +943,19 @@ class Engine {
                   while (jj < 8 &&
                          BS.board[ii][jj] == blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                     jj++;
                   }
                   if (jj < 8 &&
                       BS.board[ii][jj] < blank) { // stopped because of enemy piece
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   // right
                   ii = i+1;
@@ -733,15 +963,19 @@ class Engine {
                   while (ii < 8 &&
                          BS.board[ii][jj] == blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                     ii++;
                   }
                   if (ii < 8 &&
                       BS.board[ii][jj] < blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   // down
                   ii = i;
@@ -749,15 +983,19 @@ class Engine {
                   while (0 <= jj &&
                          BS.board[ii][jj] == blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                     jj--;
                   }
                   if (0 <= jj &&
                       BS.board[ii][jj] < blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   // left
                   ii = i-1;
@@ -765,15 +1003,19 @@ class Engine {
                   while (0 <= ii &&
                          BS.board[ii][jj] == blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                     ii--;
                   }
                   if (0 <= ii &&
                       BS.board[ii][jj] < blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   break;
                 case w_queen:
@@ -784,16 +1026,20 @@ class Engine {
                   while (ii < 8 && jj < 8 &&
                          BS.board[ii][jj] == blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                     ii++;
                     jj++;
                   }
                   if (ii < 8 && jj < 8 &&
                       BS.board[ii][jj] < blank) { // stopped because of enemy piece
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   // lower right
                   ii = i+1;
@@ -801,16 +1047,20 @@ class Engine {
                   while (ii < 8 && 0 <= jj &&
                          BS.board[ii][jj] == blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                     ii++;
                     jj--;
                   }
                   if (ii < 8 && 0 <= jj &&
                       BS.board[ii][jj] < blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   // lower left
                   ii = i-1;
@@ -818,16 +1068,20 @@ class Engine {
                   while (0 <= ii && 0 <= jj &&
                          BS.board[ii][jj] == blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                     ii--;
                     jj--;
                   }
                   if (0 <= ii && 0 <= jj &&
                       BS.board[ii][jj] < blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   // upper left
                   ii = i-1;
@@ -835,16 +1089,20 @@ class Engine {
                   while (0 <= ii && jj < 8 &&
                          BS.board[ii][jj] == blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                     ii--;
                     jj++;
                   }
                   if (0 <= ii && jj < 8 &&
                       BS.board[ii][jj] < blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   // up
                   ii = i;
@@ -852,15 +1110,19 @@ class Engine {
                   while (jj < 8 &&
                          BS.board[ii][jj] == blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                     jj++;
                   }
                   if (jj < 8 &&
                       BS.board[ii][jj] < blank) { // stopped because of enemy piece
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   // right
                   ii = i+1;
@@ -868,15 +1130,19 @@ class Engine {
                   while (ii < 8 &&
                          BS.board[ii][jj] == blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                     ii++;
                   }
                   if (ii < 8 &&
                       BS.board[ii][jj] < blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   // down
                   ii = i;
@@ -884,15 +1150,19 @@ class Engine {
                   while (0 <= jj &&
                          BS.board[ii][jj] == blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                     jj--;
                   }
                   if (0 <= jj &&
                       BS.board[ii][jj] < blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   // left
                   ii = i-1;
@@ -900,15 +1170,19 @@ class Engine {
                   while (0 <= ii &&
                          BS.board[ii][jj] == blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                     ii--;
                   }
                   if (0 <= ii &&
                       BS.board[ii][jj] < blank) {
                     Action a = {i, j, ii, jj};
-                    a_list->push_back(a);
-                    moves++;
+                    if (!check_check(advance(BS,a))) {
+                      a_list->push_back(a);
+                      moves++;
+                    }
                   }
                   break;
 
@@ -919,23 +1193,29 @@ class Engine {
                           0 <= jj && jj < 8 &&
                           BS.board[ii][jj] <= blank) {
                         Action a = {i, j, ii, jj};
-                        a_list->push_back(a);
-                        moves++;
+                        if (!check_check(advance(BS,a))) {
+                          a_list->push_back(a);
+                          moves++;
+                        }
                       }
                     }
                   }
                   if (BS.w_castle_kingside) {
                     if (BS.board[5][0] == blank && BS.board[6][0] == blank) {
                       Action a = {4, 0, 6, 0};
-                      a_list->push_back(a);
-                      moves++;
+                      if (!check_check(advance(BS,a))) {
+                        a_list->push_back(a);
+                        moves++;
+                      }
                     }
                   }
                   if (BS.w_castle_queenside) {
                     if (BS.board[3][0] == blank && BS.board[2][0] == blank && BS.board[1][0] == blank) {
                       Action a = {4, 0, 2, 0};
-                      a_list->push_back(a);
-                      moves++;
+                      if (!check_check(advance(BS,a))) {
+                        a_list->push_back(a);
+                        moves++;
+                      }
                     }
                   }
                   break;
@@ -962,7 +1242,7 @@ class Engine {
 
       if (winner != -1) {
         a_list->clear();
-        moves = -1;
+        moves = -1 * winner;
       }
       return moves;
     }
