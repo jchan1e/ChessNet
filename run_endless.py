@@ -76,7 +76,7 @@ pool_size = int(max((os.cpu_count()-2)/2, 2))
 agent_nums = [int(os.path.split(a[:-6])[1]) for a in filter(lambda s: ".agent" in s, os.listdir("Agents/") + os.listdir("Agents/archive/"))]
 next_agent_num = max(agent_nums) + 1
 
-pool = multiprocessing.Pool(int(pool_size/2))
+pool = multiprocessing.Pool(pool_size)
 pool2 = multiprocessing.Pool(pool_size*2)
 
 while generation >= 0:
@@ -163,7 +163,8 @@ while generation >= 0:
         alpha  = float(random.choice(parents)[0])
         decay  = float(random.choice(parents)[1])
         #bias   = float(random.choice(parents)[2])
-        bias   = math.sqrt(2.0)
+        #bias   = math.sqrt(2.0)
+        bias   = 1.4
         mutate = float(random.choice(parents)[3])
         layers = combineLayers(parents[0][5], parents[1][5])
 

@@ -151,6 +151,8 @@ int main(int argc, char** argv) {
 
   string w = "Tie";
   float W = M.root->state.winner;
+  if (W == -1.0)
+    W = 0.5;
   if (W == 0.0)
     w = "Black";
   if (W == 1.0)
